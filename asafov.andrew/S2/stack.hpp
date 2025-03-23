@@ -14,7 +14,6 @@ namespace asafov
     ~stack()
     {
       delete[] items_;
-      if (size_ != 0) throw std::logic_error("stack is not empty");
     }
     T back() const noexcept
     {

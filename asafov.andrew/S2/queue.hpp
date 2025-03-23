@@ -14,7 +14,6 @@ namespace asafov
     ~queue()
     {
       delete[] items_;
-      if (size_ != 0) throw std::logic_error("queue is not empty");
     }
     T back() const noexcept
     {

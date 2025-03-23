@@ -2,54 +2,39 @@
 #include "stack.hpp"
 #include "queue.hpp"
 
-std::string asafov::into_polish(std::string n)
+void asafov::str_to_queue(asafov::queue<std::string>& queue, const std::string& string)
 {
-  asafov::queue<char> in;
-  for (const char sym : n) in.push(sym);
+    size_t checkpoint = 0;
+    for (size_t pos = 0; pos < string.size(); pos++)
+    {
+        if (string[pos] == '(' || string[pos] == ')' || string[pos] == '+' || string[pos] == '-' ||
+            string[pos] == '*' || string[pos] == '/' || string[pos] == '%')
+        {
+            queue.push(string.substr(pos, 1));
+            checkpoint++;
+        }
+        else if (isdigit(string[pos-1]) && !isdigit(string[pos]))
+        {
+            queue.push(string.substr(checkpoint, pos-checkpoint));
+            checkpoint++;
+        }
+        else if (isdigit(string[pos]))
+        {
+            pos = checkpoint + 1;
+        }
+        else
+        {
+            throw std::invalid_argument("invalid char!");
+        }
+    }
+}
 
-  asafov::queue<char> out;
-  asafov::stack<char> stack;
+void asafov::into_polish(asafov::queue<std::string>& queue)
+{
+    
+}
 
-  while (in.size() > 0)
-  {
-    if (in.back() == '(')
-    {
-      stack.push(in.drop());
-    }
-    else if (in.back() == ')')
-    {
-      
-    }
-    else if (in.back() == '+')
-    {
-      
-    }
-    else if (in.back() == '*')
-    {
-      
-    }
-    else if (in.back() == '-')
-    {
-      
-    }
-    else if (in.back() == '/')
-    {
-      
-    }
-    else if (in.back() == '%')
-    {
-      
-    }
-    else
-    {
-      
-    }
-  }
-
-  std::string s;
-  for (size_t i = 0; out.size() > 0; i++)
-  {
-    s[i] = out.drop();
-  }
-  return s;
+double asafov::count(asafov::queue<std::string>& queue)
+{
+    
 }
