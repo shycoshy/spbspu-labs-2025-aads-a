@@ -11,10 +11,10 @@ namespace asafov
     items_(nullptr),
     size_(0)
     {}
-    ~queue()
+    /*~queue()
     {
       delete[] items_;
-    }
+    }*/
     T back() const noexcept
     {
       return items_[size_-1];
@@ -37,7 +37,6 @@ namespace asafov
     }
     T drop()
     {
-      if (size_ == 0) throw std::logic_error("queue is empty");
       size_--;
       T value = items_[0];
       if (size_ == 0)
@@ -56,9 +55,32 @@ namespace asafov
       }
       return value;
     }
+    void pop()
+    {
+      size_--;
+      T value = items_[0];
+      if (size_ == 0)
+      {
+        delete[] items_;
+      }
+      else
+      {
+        T* temp = items_;
+        items_ = new T[size_];
+        for (size_t i = 0; i < size_; i++)
+        {
+          items_[i] = temp[i + 1];
+        }
+        delete[] temp;
+      }
+    }
     size_t size() const noexcept
     {
       return size_;
+    }
+    bool empty () const noexcept
+    {
+      return size_ == 0;
     }
   private:
     T* items_;

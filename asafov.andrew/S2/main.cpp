@@ -8,7 +8,15 @@ int main()
   std::cin >> str;
   asafov::queue<std::string> queue;
   asafov::str_to_queue(queue, str);
+  /*while (!queue.empty())
+  {
+    std::cout << queue.drop() << std::endl;
+  }*/
   asafov::into_polish(queue);
-  std::cout << asafov::count(queue) << '\n';  
+  while (!queue.empty())
+  {
+    std::cout << queue.drop() << std::endl;
+  }
+  //std::cout << asafov::count(queue) << '\n';  
   return 0;
 }
