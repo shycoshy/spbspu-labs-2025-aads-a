@@ -1,36 +1,76 @@
 #include "parsingFunctions.h"
-#include "stack.hpp"
-#include "queue.hpp"
+#include <stdexcept>
 
-void asafov::str_to_queue(queue<std::string>& queue, const std::string& str) {
-    size_t checkpoint = 0;
-    for (size_t pos = 0; pos < str.size(); pos++) {
-        if (str[pos] == '(' || str[pos] == ')' || str[pos] == '+' || str[pos] == '-' ||
-            str[pos] == '*' || str[pos] == '/' || str[pos] == '%') {
-            if (checkpoint != pos) {
-                queue.push(str.substr(checkpoint, pos - checkpoint));
-            }
-            queue.push(str.substr(pos, 1));
-            checkpoint = pos + 1;
-            }
-        else if (isdigit(str[pos])) {
-            continue;
-        }
-        else {
-            throw std::invalid_argument("invalid char!");
-        }
-    }
-    
-    if (checkpoint < str.size()) {
-        queue.push(str.substr(checkpoint));
-    }
-}
-
-void asafov::into_polish(asafov::queue<std::string>& q)
+namespace
 {
+  bool is_operator(const std::string& s)
+  {
+    return s == "+" || s == "-" || s == "*" || s == "/" || s == "%";
+  }
+
+  int get_priority(const std::string& op)
+  {
+    if (op == "+" || op == "-") return 1;
+    if (op == "*" || op == "/" || op == "%") return 2;
+    return 0;
+  }
 }
 
-//double asafov::count(asafov::queue<std::string>& queue)
-//{
-    
-//}
+void asafov::into_polish(queue_t& queue)
+{
+  queue_t output;
+  stack_t ops;
+
+  while (!queue.empty())
+  {
+    std::string token = queue.front();
+    queue.pop();
+
+    if (token == "(")
+    {
+      ops.push(token);
+    }
+    else if (token == ")")
+    {
+      while (!ops.empty() && ops.top() != "(")
+      {
+        output.push(ops.top());
+        ops.pop();
+      }
+
+      if (!ops.empty())
+      {
+        ops.pop();
+      }
+      else
+      {
+        throw std::logic_error("mismatched parentheses!");
+      }
+    }
+    else if (is_operator(token))
+    {
+      while (!ops.empty() && ops.top() != "(" && get_priority(ops.top()) >= get_priority(token))
+      {
+        output.push(ops.top());
+        ops.pop();
+      }
+      ops.push(token);
+    }
+    else
+    {
+      output.push(token);
+    }
+  }
+
+  while (!ops.empty())
+  {
+    if (ops.top() == "(")
+    {
+      throw std::logic_error("mismatched parentheses!");
+    }
+    output.push(ops.top());
+    ops.pop();
+  }
+
+  queue = std::move(output);
+}
