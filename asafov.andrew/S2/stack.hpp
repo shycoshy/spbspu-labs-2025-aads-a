@@ -11,10 +11,10 @@ namespace asafov
     items_(nullptr),
     size_(0)
     {}
-    /*~stack()
+    ~stack()
     {
       delete[] items_;
-    }*/
+    }
     T back() const noexcept
     {
       return items_[size_-1];
