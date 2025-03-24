@@ -1,4 +1,4 @@
-#include "parsingFunctions.h"
+#include "countFunctions.h"
 #include <stdexcept>
 
 void asafov::str_to_queue(queue_t& queue, const std::string& str)
@@ -12,9 +12,9 @@ void asafov::str_to_queue(queue_t& queue, const std::string& str)
       continue;
     }
 
-    if (str[i] == '(' || str[i] == ')' || 
-        str[i] == '+' || str[i] == '-' || 
-        str[i] == '*' || str[i] == '/' || 
+    if (str[i] == '(' || str[i] == ')' ||
+        str[i] == '+' || str[i] == '-' ||
+        str[i] == '*' || str[i] == '/' ||
         str[i] == '%')
     {
       queue.push(std::string(1, str[i]));

@@ -1,5 +1,5 @@
 #include <iostream>
-#include "parsingFunctions.h"
+#include "countFunctions.h"
 
 int main()
 {
@@ -9,6 +9,6 @@ int main()
   asafov::queue_t queue;
   asafov::str_to_queue(queue, str);
   asafov::into_polish(queue);
-  std::cout << asafov::count(queue) << '\n';  
+  std::cout << asafov::count(queue) << '\n';
   return 0;
 }

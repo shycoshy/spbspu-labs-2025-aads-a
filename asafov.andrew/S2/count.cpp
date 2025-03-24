@@ -1,4 +1,4 @@
-#include "parsingFunctions.h"
+#include "countFunctions.h"
 #include <stdexcept>
 #include <cmath>
 
@@ -25,13 +25,13 @@ double asafov::count(queue_t& queue)
       {
         throw std::logic_error("not enough operands!");
       }
-      
+
       double b = std::stod(stack.top());
       stack.pop();
       double a = std::stod(stack.top());
       stack.pop();
       double result = 0;
-      
+
       if (token == "+")
       {
         result = a + b;
@@ -56,7 +56,6 @@ double asafov::count(queue_t& queue)
       {
         result = std::fmod(a, b);
       }
-      
       stack.push(std::to_string(result));
     }
     else
@@ -64,7 +63,7 @@ double asafov::count(queue_t& queue)
       stack.push(token);
     }
   }
-  
+
   if (stack.size() != 1)
   {
     throw std::logic_error("invalid expression!");
