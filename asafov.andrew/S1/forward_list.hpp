@@ -53,6 +53,12 @@ namespace asafov
       }
       return *this;
     }
+    Forward_list& operator=(Forward_list&& list)
+    {
+      Forward_list* temp = this;
+      list = temp;
+      return temp;
+    }
 
     class const_iterator
     {
@@ -116,6 +122,68 @@ namespace asafov
       Node* current_;
       Node* last_;
     };
+    class iterator
+    {
+      friend class Forward_list;
+    public:
+      iterator():
+      current_(nullptr),
+      last_(nullptr)
+      {}
+      iterator(Node* node, Node* last):
+      current_(node),
+      last_(last)
+      {}
+      iterator(const iterator& data) noexcept:
+      current_(data.current_),
+      last_(data.last_)
+      {}
+      ~iterator() = default;
+
+      T& operator*()
+      {
+        return current_->data_;
+      }
+      T* operator->()
+      {
+        return std::addressof(current_->data_);
+      }
+
+      iterator& operator++()
+      {
+        if (current_ && current_ != last_)
+        {
+          current_ = current_->next_;
+        }
+        else
+        {
+          current_ = nullptr;
+        }
+        return *this;
+      }
+
+      iterator& operator=(const iterator& data) noexcept
+      {
+        if (this != &data)
+        {
+          current_ = data.current_;
+          last_ = data.last_;
+        }
+        return *this;
+      }
+
+      bool operator==(const iterator& rhs) const
+      {
+        return current_ == rhs.current_ && last_ == rhs.last_;
+      }
+      bool operator!=(const iterator& rhs) const
+      {
+       return !(*this == rhs);
+      }
+    private:
+      Node* current_;
+      Node* last_;
+    };
 
     const_iterator cbegin() const
     {
@@ -125,15 +193,23 @@ namespace asafov
     {
       return const_iterator(nullptr, tail_);
     }
-    const_iterator begin() const
+    iterator begin() const
     {
-      return const_iterator(head_, tail_);
+      return iterator(head_, tail_);
     }
-    const_iterator end() const
+    iterator end() const
     {
-      return const_iterator(nullptr, tail_);
+      return iterator(nullptr, tail_);
     }
 
+    T& front()
+    {
+      return head_->data_;
+    }
+    T& back()
+    {
+      return tail_->data_;
+    }
     bool empty() const
     {
       return !head_;
@@ -142,7 +218,19 @@ namespace asafov
     {
       return size_;
     }
-    void pop_front()
+    void swap(const iterator& a, const iterator& b)
+    {
+      Node* temp1 = head_;
+      while (temp1->next_ != a.current_) temp1 = temp1->next;
+      Node* temp2 = head_;
+      while (temp1->next_ != b.current_) temp1 = temp1->next;
+      temp1->next_ = b;
+      temp2->next_ = a;
+      Node* temp3 = a.current_->next_;
+      a.current_->next_ = b.current_->next_;
+      b.current_->next_ = temp3;
+    }
+    void pop_front() noexcept
     {
       size_--;
       Node* temp = head_;
