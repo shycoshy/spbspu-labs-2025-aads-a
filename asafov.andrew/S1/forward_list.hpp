@@ -30,7 +30,7 @@ namespace asafov
         push_back(*i);
       }
     }
-    Forward_list(Forward_list&& list):
+    Forward_list(Forward_list&& list) noexcept:
     head_(list.head_),
     tail_(list.tail_),
     size_(list.size_)
@@ -38,6 +38,14 @@ namespace asafov
       list.head_ = nullptr;
       list.tail_ = nullptr;
       list.size_ = 0;
+    }
+    Forward_list(const size_t count, const T value):
+    Forward_list()
+    {
+      for (size_t i = 0; i < count; ++i)
+      {
+        push_back(value);
+      }
     }
     ~Forward_list() noexcept
     {
@@ -53,11 +61,18 @@ namespace asafov
       }
       return *this;
     }
-    Forward_list& operator=(Forward_list&& list)
+    Forward_list& operator=(Forward_list&& list) noexcept
     {
-      Forward_list* temp = this;
-      list = temp;
-      return temp;
+      Node* head = list.head_;
+      Node* tail = list.tail_;
+      size_t size = list.size_;
+      list.head_ = head_;
+      list.tail_ = tail_;
+      list.size_ = size_;
+      head_ = head;
+      tail_ = tail;
+      size_ = size;
+      return *this;
     }
 
     class const_iterator
@@ -218,18 +233,6 @@ namespace asafov
     {
       return size_;
     }
-    void swap(const iterator& a, const iterator& b)
-    {
-      Node* temp1 = head_;
-      while (temp1->next_ != a.current_) temp1 = temp1->next;
-      Node* temp2 = head_;
-      while (temp1->next_ != b.current_) temp1 = temp1->next;
-      temp1->next_ = b;
-      temp2->next_ = a;
-      Node* temp3 = a.current_->next_;
-      a.current_->next_ = b.current_->next_;
-      b.current_->next_ = temp3;
-    }
     void pop_front() noexcept
     {
       size_--;
@@ -275,6 +278,110 @@ namespace asafov
       {
         pop_front();
       }
+    }
+
+    Forward_list& swap(Forward_list& list) noexcept
+    {
+      Node* head = list.head_;
+      Node* tail = list.tail_;
+      size_t size = list.size_;
+      list.head_ = head_;
+      list.tail_ = tail_;
+      list.size_ = size_;
+      head_ = head;
+      tail_ = tail;
+      size_ = size;
+      return *this;
+    }
+    void remove(const T& value) noexcept
+    {
+      if (!head_) return;
+      Node* current = head_;
+      Node* prev = tail_;
+      bool found = false;
+      do
+      {
+        if (current->data_ == value)
+        {
+          found = true;
+          Node* toDelete = current;
+          if (current == head_)
+          {
+            head_ = head_->next_;
+            tail_->next_ = head_;
+          }
+          else if (current == tail_)
+          {
+            tail_ = prev;
+            tail_->next_ = head_;
+          }
+          else
+          {
+            prev->next_ = current->next_;
+          }
+          current = current->next_;
+          delete toDelete;
+          size_--;
+        }
+        else
+        {
+          prev = current;
+          current = current->next_;
+        }
+      } while (current != head_ && found && size_ > 0);
+      if (size_ == 0)
+      {
+        head_ = tail_ = nullptr;
+      }
+    }
+    void remove_if(bool(f)(const T&))
+    {
+      if (!head_) return;
+      Node* current = head_;
+      Node* prev = tail_;
+      bool found = false;
+      do
+      {
+        if (f(current->data_))
+        {
+          found = true;
+          Node* toDelete = current;
+          if (current == head_)
+          {
+            head_ = head_->next_;
+            tail_->next_ = head_;
+          }
+          else if (current == tail_)
+          {
+            tail_ = prev;
+            tail_->next_ = head_;
+          }
+          else
+          {
+            prev->next_ = current->next_;
+          }
+          current = current->next_;
+          delete toDelete;
+          size_--;
+        }
+        else
+        {
+          prev = current;
+          current = current->next_;
+        }
+      } while (current != head_ && found && size_ > 0);
+      if (size_ == 0)
+      {
+        head_ = tail_ = nullptr;
+      }
+    }
+    void assign(size_t count, const T value)
+    {
+        clear();
+        for (size_t i = 0; i < count; ++i)
+        {
+          push_back(value);
+        }
     }
 
   private:
