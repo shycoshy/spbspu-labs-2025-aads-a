@@ -12,7 +12,7 @@ int main(int argc, char* argv[])
     asafov::queue_t queue;
     asafov::str_to_queue(queue, str);
     asafov::into_polish(queue);
-    std::cout << std::fixed << asafov::count(queue) << '\n';
+    std::cout << std::fixed << std::setprecision(0) << asafov::count(queue) << '\n';
     return 0;
   }
   else if (argc == 2)
