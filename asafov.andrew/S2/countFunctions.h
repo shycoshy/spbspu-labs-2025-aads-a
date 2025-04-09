@@ -12,6 +12,6 @@ namespace asafov
 
   void str_to_queue(queue_t& queue, const std::string& string);
   void into_polish(queue_t& queue);
-  double count(queue_t& queue);
+  long double count(queue_t& queue);
 }
 #endif

@@ -10,7 +10,7 @@ namespace
   }
 }
 
-double asafov::count(queue_t& queue)
+long double asafov::count(queue_t& queue)
 {
   stack_t stack;
 
@@ -26,11 +26,11 @@ double asafov::count(queue_t& queue)
         throw std::logic_error("not enough operands!");
       }
 
-      double b = std::stod(stack.top());
+      long double b = std::stod(stack.top());
       stack.pop();
-      double a = std::stod(stack.top());
+      long double a = std::stod(stack.top());
       stack.pop();
-      double result = 0;
+      long double result = 0;
 
       if (token == "+")
       {
@@ -66,6 +66,10 @@ double asafov::count(queue_t& queue)
 
   if (stack.size() != 1)
   {
+    while (!stack.empty())
+    {
+      stack.pop();
+    }
     throw std::logic_error("invalid expression!");
   }
 

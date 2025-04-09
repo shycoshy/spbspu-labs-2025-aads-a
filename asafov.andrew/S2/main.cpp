@@ -12,14 +12,13 @@ int main(int argc, char* argv[])
     asafov::queue_t queue;
     asafov::str_to_queue(queue, str);
     asafov::into_polish(queue);
-    long long res = asafov::count(queue);
-    std::cout << std::fixed << res << '\n';
+    std::cout << std::fixed << asafov::count(queue) << '\n';
     return 0;
   }
   else if (argc == 2)
   {
     std::ifstream fin(argv[1]);
-    std::stack<double> result;
+    std::stack<long double> result;
     while (!fin.eof())
     {
       std::string str;
