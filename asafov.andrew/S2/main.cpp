@@ -12,14 +12,15 @@ int main(int argc, char* argv[])
     asafov::queue_t queue;
     asafov::str_to_queue(queue, str);
     asafov::into_polish(queue);
-    std::cout << std::fixed << std::setprecision(0) << asafov::count(queue) << '\n';
+    long long res = asafov::count(queue);
+    std::cout << std::fixed << res << '\n';
     return 0;
   }
   else if (argc == 2)
   {
     std::ifstream fin(argv[1]);
     std::stack<double> result;
-    do
+    while (!fin.eof())
     {
       std::string str;
       std::getline(std::cin, str);
@@ -27,7 +28,7 @@ int main(int argc, char* argv[])
       asafov::str_to_queue(queue, str);
       asafov::into_polish(queue);
       result.push(asafov::count(queue));
-    } while (!fin.eof());
+    }
     fin.close();
     if (result.empty())
     {
@@ -39,6 +40,7 @@ int main(int argc, char* argv[])
     }
     else
     {
+      std::cout << std::fixed << std::setprecision(0);
       std::cout << result.top();
       result.pop();
       while (!result.empty())
