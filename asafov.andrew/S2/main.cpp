@@ -18,7 +18,7 @@ int main(int argc, char* argv[])
   else if (argc == 2)
   {
     std::ifstream fin(argv[1]);
-    std::stack<long double> result;
+    std::stack<num_t> result;
     while (!fin.eof())
     {
       std::string str;

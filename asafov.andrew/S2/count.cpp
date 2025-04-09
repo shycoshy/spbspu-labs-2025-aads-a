@@ -10,7 +10,7 @@ namespace
   }
 }
 
-long double asafov::count(queue_t& queue)
+num_t asafov::count(queue_t& queue)
 {
   stack_t stack;
 
@@ -26,11 +26,11 @@ long double asafov::count(queue_t& queue)
         throw std::logic_error("not enough operands!");
       }
 
-      long double b = std::stod(stack.top());
+      num_t b = std::stod(stack.top());
       stack.pop();
-      long double a = std::stod(stack.top());
+      num_t a = std::stod(stack.top());
       stack.pop();
-      long double result = 0;
+      num_t result = 0;
 
       if (token == "+")
       {
