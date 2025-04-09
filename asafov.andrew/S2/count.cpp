@@ -1,12 +1,24 @@
 #include "countFunctions.h"
 #include <stdexcept>
 #include <cmath>
+#include <ostream>
+#include <iostream>
 
 namespace
 {
   bool is_operator(const std::string& s)
   {
     return s == "+" || s == "-" || s == "*" || s == "/" || s == "%";
+  }
+
+  double str_to_ll ( const std::string& str, std::size_t* pos = nullptr )
+  {
+    long long result = 0;
+    for (size_t i = 0; i < str.size(); ++i)
+    {
+      result = result * 10 + (str[i] - '0');
+    }
+    return result;
   }
 }
 
@@ -25,24 +37,36 @@ num_t asafov::count(queue_t& queue)
       {
         throw std::logic_error("not enough operands!");
       }
-
-      num_t b = std::stod(stack.top());
+      num_t b = std::stoll(stack.top());
+      //std::clog << "b(" << stack.top() << ") = " << b << std::endl;
       stack.pop();
-      num_t a = std::stod(stack.top());
+      num_t a = std::stoll(stack.top());
+      //std::clog << "a(" << stack.top() << ") = " << a << std::endl;
       stack.pop();
       num_t result = 0;
 
       if (token == "+")
       {
         result = a + b;
+        //std::clog << "a(" << a << ") + b(" << b << ") = result(" << result << ')' << std::endl;
+        if (result > std::numeric_limits<num_t>::max())
+        {
+          throw std::logic_error("owerflow!");
+        }
       }
       else if (token == "-")
       {
         result = a - b;
+        //std::clog << "a(" << a << ") - b(" << b << ") = result(" << result << ')' << std::endl;
+        if (result < std::numeric_limits<num_t>::min())
+        {
+          throw std::logic_error("underflow!");
+        }
       }
       else if (token == "*")
       {
         result = a * b;
+        //std::clog << "a(" << a << ") * b(" << b << ") = result(" << result << ')' << std::endl;
       }
       else if (token == "/")
       {
@@ -51,10 +75,12 @@ num_t asafov::count(queue_t& queue)
           throw std::logic_error("division by zero!");
         }
         result = a / b;
+        //std::clog << "a(" << a << ") / b(" << b << ") = result(" << result << ')' << std::endl;
       }
       else if (token == "%")
       {
         result = std::fmod(a, b);
+        //std::clog << "a(" << a << ") % b(" << b << ") = result(" << result << ')' << std::endl;
       }
       stack.push(std::to_string(result));
     }
@@ -73,5 +99,5 @@ num_t asafov::count(queue_t& queue)
     throw std::logic_error("invalid expression!");
   }
 
-  return std::stod(stack.top());
+  return std::stoll(stack.top());
 }
