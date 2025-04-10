@@ -36,17 +36,21 @@ num_t asafov::count(queue_t& queue)
 
       if (token == "+")
       {
+        if (a > std::numeric_limits<num_t>::max() - b)
+        {
+          throw std::logic_error("overflow!");
+        }
         result = a + b;
         //std::clog << "a(" << a << ") + b(" << b << ") = result(" << result << ')' << std::endl;
       }
       else if (token == "-")
       {
-        result = a - b;
-        //std::clog << "a(" << a << ") - b(" << b << ") = result(" << result << ')' << std::endl;
-        if (result < -std::numeric_limits<num_t>::max())
+        if (a < -1 * std::numeric_limits<num_t>::max() + b)
         {
           throw std::logic_error("underflow!");
         }
+        result = a - b;
+        //std::clog << "a(" << a << ") - b(" << b << ") = result(" << result << ')' << std::endl;
       }
       else if (token == "*")
       {
