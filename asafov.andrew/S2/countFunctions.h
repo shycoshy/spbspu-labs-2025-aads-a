@@ -2,7 +2,7 @@
 #define PARSING_FUNCTIONS_H
 
 //очень удобный костыль, если я его не убрал а тесты проходятся то я лох
-#define num_t long long
+using num_t = long long;
 
 #include <string>
 #include <stack>

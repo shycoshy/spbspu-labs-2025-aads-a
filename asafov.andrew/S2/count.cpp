@@ -10,16 +10,6 @@ namespace
   {
     return s == "+" || s == "-" || s == "*" || s == "/" || s == "%";
   }
-
-  double str_to_ll ( const std::string& str, std::size_t* pos = nullptr )
-  {
-    long long result = 0;
-    for (size_t i = 0; i < str.size(); ++i)
-    {
-      result = result * 10 + (str[i] - '0');
-    }
-    return result;
-  }
 }
 
 num_t asafov::count(queue_t& queue)
@@ -49,16 +39,13 @@ num_t asafov::count(queue_t& queue)
       {
         result = a + b;
         //std::clog << "a(" << a << ") + b(" << b << ") = result(" << result << ')' << std::endl;
-        if (result > std::numeric_limits<num_t>::max())
-        {
-          throw std::logic_error("owerflow!");
-        }
+        
       }
       else if (token == "-")
       {
         result = a - b;
         //std::clog << "a(" << a << ") - b(" << b << ") = result(" << result << ')' << std::endl;
-        if (result < std::numeric_limits<num_t>::min())
+        if (result < -std::numeric_limits<num_t>::max())
         {
           throw std::logic_error("underflow!");
         }
