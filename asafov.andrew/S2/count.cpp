@@ -1,8 +1,7 @@
 #include "countFunctions.h"
 #include <stdexcept>
 #include <cmath>
-#include <ostream>
-#include <iostream>
+//#include <iostream>
 
 namespace
 {
@@ -39,7 +38,6 @@ num_t asafov::count(queue_t& queue)
       {
         result = a + b;
         //std::clog << "a(" << a << ") + b(" << b << ") = result(" << result << ')' << std::endl;
-        
       }
       else if (token == "-")
       {
