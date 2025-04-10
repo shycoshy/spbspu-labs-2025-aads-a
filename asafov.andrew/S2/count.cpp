@@ -38,6 +38,10 @@ num_t asafov::count(queue_t& queue)
       {
         if (a > 9223372036854775807ll - b)
         {
+          while (!stack.empty())
+          {
+            stack.pop();
+          }
           throw std::logic_error("overflow!");
         }
         result = a + b;
@@ -47,6 +51,10 @@ num_t asafov::count(queue_t& queue)
       {
         if (a + 1 < -9223372036854775807ll + b)
         {
+          while (!stack.empty())
+          {
+            stack.pop();
+          }
           throw std::logic_error("underflow!");
         }
         result = a - b;
@@ -61,6 +69,10 @@ num_t asafov::count(queue_t& queue)
       {
         if (b == 0.0)
         {
+          while (!stack.empty())
+          {
+            stack.pop();
+          }
           throw std::logic_error("division by zero!");
         }
         result = a / b;
