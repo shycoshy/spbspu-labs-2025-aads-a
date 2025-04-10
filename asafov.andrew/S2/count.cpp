@@ -36,7 +36,7 @@ num_t asafov::count(queue_t& queue)
 
       if (token == "+")
       {
-        if (a > std::numeric_limits<num_t>::max() - b)
+        if (a > 9223372036854775807ll - b)
         {
           throw std::logic_error("overflow!");
         }
@@ -45,7 +45,7 @@ num_t asafov::count(queue_t& queue)
       }
       else if (token == "-")
       {
-        if (a < -1 * std::numeric_limits<num_t>::max() + b)
+        if (a + 1 < -9223372036854775807ll + b)
         {
           throw std::logic_error("underflow!");
         }
