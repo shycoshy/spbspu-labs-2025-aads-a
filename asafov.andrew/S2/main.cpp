@@ -12,8 +12,14 @@ int main(int argc, char* argv[])
     asafov::queue_t queue;
     asafov::str_to_queue(queue, str);
     asafov::into_polish(queue);
-    std::cout << std::fixed << std::setprecision(0) << asafov::count(queue) << '\n';
-    return 0;
+    try
+    {
+      std::cout << std::fixed << std::setprecision(0) << asafov::count(queue) << '\n';
+    }
+    catch (const std::logic_error& e)
+    {
+      std::cerr << e.what() << '\n';
+    }
   }
   else if (argc == 2)
   {
@@ -26,7 +32,14 @@ int main(int argc, char* argv[])
       asafov::queue_t queue;
       asafov::str_to_queue(queue, str);
       asafov::into_polish(queue);
-      result.push(asafov::count(queue));
+      try
+      {
+        result.push(asafov::count(queue));
+      }
+      catch (const std::logic_error& e)
+      {
+        std::cerr << e.what() << '\n';
+      }
     }
     fin.close();
     if (result.empty())
