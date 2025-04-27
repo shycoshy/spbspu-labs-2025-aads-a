@@ -1,29 +1,30 @@
-#ifndef FORWARD_LIST_6A_HPP
-#define FORWARD_LIST_6A_HPP
+#ifndef FORWARD_LIST_HPP
+#define FORWARD_LIST_HPP
 #include <memory>
+#include <stdexcept>
 
 namespace asafov
 {
-  template <typename T>
+  template< typename T >
   class Forward_list
   {
     struct Node
     {
       explicit Node(const T& value, Node* ptr = nullptr) noexcept:
-      data_(value),
-      next_(ptr)
+        data_(value),
+        next_(ptr)
       {}
       T data_;
       Node* next_;
     };
   public:
     Forward_list() noexcept:
-    head_(nullptr),
-    tail_(nullptr),
-    size_(0)
+      head_(nullptr),
+      tail_(nullptr),
+      size_(0)
     {}
     Forward_list(const Forward_list& list):
-    Forward_list()
+      Forward_list()
     {
       for (auto i = list.cbegin(); i != list.cend(); ++i)
       {
@@ -31,16 +32,16 @@ namespace asafov
       }
     }
     Forward_list(Forward_list&& list) noexcept:
-    head_(list.head_),
-    tail_(list.tail_),
-    size_(list.size_)
+      head_(list.head_),
+      tail_(list.tail_),
+      size_(list.size_)
     {
       list.head_ = nullptr;
       list.tail_ = nullptr;
       list.size_ = 0;
     }
     Forward_list(const size_t count, const T value):
-    Forward_list()
+      Forward_list()
     {
       for (size_t i = 0; i < count; ++i)
       {
@@ -54,50 +55,52 @@ namespace asafov
 
     Forward_list& operator=(const Forward_list& list)
     {
-      clear();
-      for (auto data : list)
+      Forward_list temp;
+      for (auto&& data: list)
       {
-        push_back(data);
+        temp.push_back(data);
       }
+      clear();
+      swap(temp);
+      delete temp;
       return *this;
     }
     Forward_list& operator=(Forward_list&& list) noexcept
     {
-      Node* head = list.head_;
-      Node* tail = list.tail_;
-      size_t size = list.size_;
-      list.head_ = head_;
-      list.tail_ = tail_;
-      list.size_ = size_;
-      head_ = head;
-      tail_ = tail;
-      size_ = size;
+      if (this == &list)
+      {
+        return *this;
+      }
+      clear();
+      head_ = list.head_;
+      tail_ = list.tail_;
+      size_ = list.size_;
+      list.head_ = nullptr;
+      list.tail_ = nullptr;
+      list.size_ = 0;
       return *this;
     }
 
     class const_iterator
     {
       friend class Forward_list;
+      const_iterator(Node* node, Node* last):
+        current_(node),
+        last_(last)
+      {}
     public:
       const_iterator():
-      current_(nullptr),
-      last_(nullptr)
+        current_(nullptr),
+        last_(nullptr)
       {}
-      const_iterator(Node* node, Node* last):
-      current_(node),
-      last_(last)
-      {}
-      const_iterator(const const_iterator& data) noexcept:
-      current_(data.current_),
-      last_(data.last_)
-      {}
+      const_iterator(const const_iterator& data) = default;
       ~const_iterator() = default;
 
-      const T& operator*() const
+      const T& operator*()
       {
         return current_->data_;
       }
-      T* operator->() const
+      const T* operator->()
       {
         return std::addressof(current_->data_);
       }
@@ -114,14 +117,9 @@ namespace asafov
         }
         return *this;
       }
-
-      const_iterator& operator=(const const_iterator& data) noexcept
+      const_iterator& operator++(int)
       {
-        if (this != &data)
-        {
-          current_ = data.current_;
-          last_ = data.last_;
-        }
+        current_ = current_ ? current_->next_ : nullptr;
         return *this;
       }
 
@@ -140,19 +138,16 @@ namespace asafov
     class iterator
     {
       friend class Forward_list;
+      iterator(Node* node, Node* last):
+        current_(node),
+        last_(last)
+      {}
     public:
       iterator():
-      current_(nullptr),
-      last_(nullptr)
+        current_(nullptr),
+        last_(nullptr)
       {}
-      iterator(Node* node, Node* last):
-      current_(node),
-      last_(last)
-      {}
-      iterator(const iterator& data) noexcept:
-      current_(data.current_),
-      last_(data.last_)
-      {}
+      iterator(const iterator& data) = default;
       ~iterator() = default;
 
       T& operator*()
@@ -176,60 +171,91 @@ namespace asafov
         }
         return *this;
       }
-
-      iterator& operator=(const iterator& data) noexcept
+      iterator& operator++(int)
       {
-        if (this != &data)
-        {
-          current_ = data.current_;
-          last_ = data.last_;
-        }
+        current_ = current_ ? current_->next_ : nullptr;
         return *this;
       }
 
-      bool operator==(const iterator& rhs) const
+      bool operator==(const iterator& rhs)
       {
         return current_ == rhs.current_ && last_ == rhs.last_;
       }
-      bool operator!=(const iterator& rhs) const
+      bool operator!=(const iterator& rhs)
       {
-       return !(*this == rhs);
+        return !(*this == rhs);
       }
     private:
       Node* current_;
       Node* last_;
     };
 
-    const_iterator cbegin() const
+    const_iterator cbegin() const noexcept
     {
       return const_iterator(head_, tail_);
     }
-    const_iterator cend() const
+    const_iterator cend() const noexcept
     {
       return const_iterator(nullptr, tail_);
     }
-    iterator begin() const
+    iterator begin() noexcept
     {
       return iterator(head_, tail_);
     }
-    iterator end() const
+    iterator end() noexcept
     {
       return iterator(nullptr, tail_);
     }
 
     T& front()
     {
-      return head_->data_;
+      if (head_->data_)
+      {
+        return head_->data_;
+      }
+      else
+      {
+        throw std::logic_error("list is empty!");
+      }
+    }
+    const T& front() const
+    {
+      if (head_->data_)
+      {
+        return head_->data_;
+      }
+      else
+      {
+        throw std::logic_error("list is empty!");
+      }
     }
     T& back()
     {
-      return tail_->data_;
+      if (tail_->data_)
+      {
+        return tail_->data_;
+      }
+      else
+      {
+        throw std::logic_error("list is empty!");
+      }
     }
-    bool empty() const
+    const T& back() const
+    {
+      if (tail_->data_)
+      {
+        return tail_->data_;
+      }
+      else
+      {
+        throw std::logic_error("list is empty!");
+      }
+    }
+    bool empty() const noexcept
     {
       return !head_;
     }
-    size_t size() const
+    size_t size() const noexcept
     {
       return size_;
     }
@@ -237,9 +263,7 @@ namespace asafov
     {
       size_--;
       Node* temp = head_;
-      if (head_ == nullptr)
-      {}
-      else
+      if (head_ != nullptr)
       {
         if (head_ == tail_)
         {
@@ -282,20 +306,17 @@ namespace asafov
 
     Forward_list& swap(Forward_list& list) noexcept
     {
-      Node* head = list.head_;
-      Node* tail = list.tail_;
-      size_t size = list.size_;
-      list.head_ = head_;
-      list.tail_ = tail_;
-      list.size_ = size_;
-      head_ = head;
-      tail_ = tail;
-      size_ = size;
+      std::swap(head_, list.head_);
+      std::swap(tail_, list.tail_);
+      std::swap(size_, list.size_);
       return *this;
     }
     void remove(const T& value) noexcept
     {
-      if (!head_) return;
+      if (!head_)
+      {
+        return;
+      }
       Node* current = head_;
       Node* prev = tail_;
       bool found = false;
@@ -328,21 +349,26 @@ namespace asafov
           prev = current;
           current = current->next_;
         }
-      } while (current != head_ && found && size_ > 0);
+      }
+      while (current != head_ && found && size_ > 0);
       if (size_ == 0)
       {
         head_ = tail_ = nullptr;
       }
     }
-    void remove_if(bool(f)(const T&))
+    template< class C >
+    void remove_if(C condition) noexcept
     {
-      if (!head_) return;
+      if (!head_)
+      {
+        return;
+      }
       Node* current = head_;
       Node* prev = tail_;
       bool found = false;
       do
       {
-        if (f(current->data_))
+        if (condition(current->data_))
         {
           found = true;
           Node* toDelete = current;
@@ -369,19 +395,22 @@ namespace asafov
           prev = current;
           current = current->next_;
         }
-      } while (current != head_ && found && size_ > 0);
+      }
+      while (current != head_ && found && size_ > 0);
       if (size_ == 0)
       {
         head_ = tail_ = nullptr;
       }
     }
-    void assign(size_t count, const T value)
+    void assign(size_t count, const T& value)
     {
-        clear();
-        for (size_t i = 0; i < count; ++i)
-        {
-          push_back(value);
-        }
+      Forward_list temp;
+      for (size_t i = 0; i < count; ++i)
+      {
+        temp.push_back(value);
+      }
+      clear();
+      swap(temp);
     }
 
   private:
