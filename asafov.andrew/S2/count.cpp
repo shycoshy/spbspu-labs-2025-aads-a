@@ -24,7 +24,7 @@ num_t asafov::count(queue_t& queue)
     {
       if (stack.size() < 2)
       {
-        throw std::logic_error("not enough operands!");
+        throw std::invalid_argument("not enough operands!");
       }
       num_t b = std::stoll(stack.top());
       //std::clog << "b(" << stack.top() << ") = " << b << std::endl;
@@ -97,7 +97,7 @@ num_t asafov::count(queue_t& queue)
     {
       stack.pop();
     }
-    throw std::logic_error("invalid expression!");
+    throw std::invalid_argument("invalid expression!");
   }
 
   return std::stoll(stack.top());
