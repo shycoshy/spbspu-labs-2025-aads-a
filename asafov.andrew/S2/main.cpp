@@ -7,11 +7,11 @@ int main(int argc, char* argv[])
 {
   if (argc == 1)
   {
+    asafov::queue_t queue;
     try
     {
       std::string str;
       std::getline(std::cin, str);
-      asafov::queue_t queue;
       asafov::str_to_queue(queue, str);
       asafov::into_polish(queue);
     }
@@ -35,11 +35,11 @@ int main(int argc, char* argv[])
     std::stack<num_t> result;
     while (!fin.eof())
     {
+      asafov::queue_t queue;
       try
       {
         std::string str;
         std::getline(std::cin, str);
-        asafov::queue_t queue;
         asafov::str_to_queue(queue, str);
         asafov::into_polish(queue);
       }
