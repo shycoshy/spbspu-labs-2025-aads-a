@@ -7,13 +7,13 @@ int main(int argc, char* argv[])
 {
   if (argc == 1)
   {
-    std::string str;
-    std::getline(std::cin, str);
-    asafov::queue_t queue;
-    asafov::str_to_queue(queue, str);
-    asafov::into_polish(queue);
     try
     {
+      std::string str;
+      std::getline(std::cin, str);
+      asafov::queue_t queue;
+      asafov::str_to_queue(queue, str);
+      asafov::into_polish(queue);
       std::cout << std::fixed << std::setprecision(0) << asafov::count(queue) << '\n';
     }
     catch (const std::logic_error& e)
@@ -25,16 +25,16 @@ int main(int argc, char* argv[])
   else if (argc == 2)
   {
     std::ifstream fin(argv[1]);
-    std::stack<num_t> result;
+    std::stack<num_t> result; 
     while (!fin.eof())
     {
-      std::string str;
-      std::getline(std::cin, str);
-      asafov::queue_t queue;
-      asafov::str_to_queue(queue, str);
-      asafov::into_polish(queue);
       try
       {
+        std::string str;
+        std::getline(std::cin, str);
+        asafov::queue_t queue;
+        asafov::str_to_queue(queue, str);
+        asafov::into_polish(queue);
         result.push(asafov::count(queue));
       }
       catch (const std::logic_error& e)
