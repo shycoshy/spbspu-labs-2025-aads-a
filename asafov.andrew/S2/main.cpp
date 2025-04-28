@@ -8,7 +8,7 @@ namespace
   int countExpression(std::istream& is, std::stack<num_t>& result)
   {
     std::string str;
-    std::getline(std::cin, str);
+    std::getline(is, str);
     if (str.empty()) return 0;
     asafov::queue_t queue;
     asafov::str_to_queue(queue, str);
