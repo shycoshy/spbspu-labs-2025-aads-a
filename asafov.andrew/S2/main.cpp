@@ -32,7 +32,6 @@ int main(int argc, char* argv[])
     std::stack<num_t> result; 
     while (!fin.eof())
     {
-      
       try
       {
         std::string str;
