@@ -25,7 +25,7 @@ int main(int argc, char* argv[])
   else if (argc == 2)
   {
     std::ifstream fin(argv[1]);
-    std::stack<num_t> result; 
+    std::stack<num_t> result;
     while (!fin.eof())
     {
       try
