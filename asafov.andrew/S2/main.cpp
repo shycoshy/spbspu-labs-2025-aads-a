@@ -38,7 +38,6 @@ int main(int argc, char* argv[])
   if (argc == 1)
   {
     is = &std::cin;
-    
   }
   else if (argc == 2)
   {
