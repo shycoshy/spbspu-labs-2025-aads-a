@@ -15,7 +15,7 @@ namespace
     try
     {
       asafov::into_polish(queue);
-        result.push(asafov::count(queue));
+      result.push(asafov::count(queue));
     }
     catch (const std::invalid_argument& e)
     {
@@ -36,9 +36,15 @@ int main(int argc, char* argv[])
   std::stack<num_t> result;
   if (argc == 1)
   {
-    if (countExpression(std::cin, result)) return 1;
-    std::cout << std::fixed << std::setprecision(0) << result.top() << '\n';
-    result.pop();
+    while (!std::cin.eof())
+    {
+      if (countExpression(std::cin, result)) return 1;
+    }
+    while (!result.empty())
+    {
+      std::cout << std::fixed << std::setprecision(0) << result.top() << '\n';
+      result.pop();
+    }
   }
   else if (argc == 2)
   {
