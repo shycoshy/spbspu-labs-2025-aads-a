@@ -16,20 +16,20 @@ int main(int argc, char* argv[])
       asafov::into_polish(queue);
       std::cout << std::fixed << std::setprecision(0) << asafov::count(queue) << '\n';
     }
-    catch (const std::logic_error& e)
-    {
-      return 0;
-    }
     catch (const std::invalid_argument& e)
     {
       std::cerr << e.what() << '\n';
       return 1;
     }
+    catch (const std::logic_error& e)
+    {
+      return 0;
+    }
   }
   else if (argc == 2)
   {
     std::ifstream fin(argv[1]);
-    std::stack<num_t> result;
+    std::stack<num_t> result; 
     while (!fin.eof())
     {
       try
@@ -41,14 +41,14 @@ int main(int argc, char* argv[])
         asafov::into_polish(queue);
         result.push(asafov::count(queue));
       }
-      catch (const std::logic_error& e)
-      {
-        continue;
-      }
       catch (const std::invalid_argument& e)
       {
         std::cerr << e.what() << '\n';
         return 1;
+      }
+      catch (const std::logic_error& e)
+      {
+        continue;
       }
     }
     fin.close();
