@@ -40,11 +40,13 @@ int main(int argc, char* argv[])
     {
       if (countExpression(std::cin, result)) return 1;
     }
-    while (!result.empty())
+    while (result.size() != 1)
     {
-      std::cout << std::fixed << std::setprecision(0) << result.top() << '\n';
+      std::cout << std::fixed << std::setprecision(0) << result.top() << ' ';
       result.pop();
     }
+    std::cout << std::fixed << std::setprecision(0) << result.top() << '\n';
+    result.pop();
   }
   else if (argc == 2)
   {
