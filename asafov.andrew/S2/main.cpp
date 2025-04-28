@@ -34,39 +34,32 @@ namespace
 int main(int argc, char* argv[])
 {
   std::stack<num_t> result;
+  std::istream* is = nullptr;
   if (argc == 1)
   {
-    while (!std::cin.eof())
-    {
-      if (countExpression(std::cin, result)) return 1;
-    }
-    while (result.size() != 1)
-    {
-      std::cout << std::fixed << std::setprecision(0) << result.top() << ' ';
-      result.pop();
-    }
-    std::cout << std::fixed << std::setprecision(0) << result.top() << '\n';
-    result.pop();
+    is = &std::cin;
+    
   }
   else if (argc == 2)
   {
     std::ifstream fin(argv[1]);
-    while (!fin.eof())
-    {
-      if (countExpression(fin, result)) return 1;
-    }
-    while (result.size() != 1)
-    {
-      std::cout << std::fixed << std::setprecision(0) << result.top() << ' ';
-      result.pop();
-    }
-    std::cout << std::fixed << std::setprecision(0) << result.top() << '\n';
-    result.pop();
+    is = &fin;
   }
   else
   {
     std::cerr << "invalid arguments\n";
     return 1;
   }
+  while (!is->eof())
+  {
+    if (countExpression(*is, result)) return 1;
+  }
+  while (result.size() != 1)
+  {
+    std::cout << std::fixed << std::setprecision(0) << result.top() << ' ';
+    result.pop();
+  }
+  std::cout << std::fixed << std::setprecision(0) << result.top() << '\n';
+  result.pop();
   return 0;
 }
