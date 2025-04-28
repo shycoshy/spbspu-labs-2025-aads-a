@@ -7,26 +7,55 @@ int main(int argc, char* argv[])
 {
   if (argc == 1)
   {
-    std::string str;
-    std::getline(std::cin, str);
-    if (str.empty()) return 0;
-    asafov::queue_t queue;
-    asafov::str_to_queue(queue, str);
-    try
+    std::stack<num_t> result;
+    if (!std::cin.eof())
     {
-      asafov::into_polish(queue);
-      std::cout << std::fixed << std::setprecision(0) << asafov::count(queue) << '\n';
+      std::cout << '\n';
+       return 0;
     }
-    catch (const std::invalid_argument& e)
+    while (!std::cin.eof())
     {
-      std::cerr << e.what() << '\n';
-      return 1;
+      std::string str;
+      std::getline(std::cin, str);
+      if (str.empty()) continue;
+      asafov::queue_t queue;
+      asafov::str_to_queue(queue, str);
+      try
+      {
+        asafov::into_polish(queue);
+        result.push(asafov::count(queue));
+      }
+      catch (const std::invalid_argument& e)
+      {
+        continue;
+      }
+      catch (const std::logic_error& e)
+      {
+       std::cerr << e.what() << '\n';
+       return 1;
+      }
     }
-    catch (const std::logic_error& e)
+    if (result.empty())
     {
-      std::cerr << e.what() << '\n';
-      return 1;
+      std::cout << '\n';
     }
+    else if (result.size() > 1)
+    {
+      std::cout << result.top() << '\n';
+    }
+    else
+    {
+      std::cout << std::fixed << std::setprecision(0);
+      std::cout << result.top();
+      result.pop();
+      while (!result.empty())
+      {
+        std::cout << ' ' << result.top();
+        result.pop();
+      }
+      std::cout << '\n';
+    }
+    return 0;
   }
   else if (argc == 2)
   {
