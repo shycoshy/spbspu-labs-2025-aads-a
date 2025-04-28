@@ -53,7 +53,12 @@ int main(int argc, char* argv[])
   {
     if (countExpression(*is, result)) return 1;
   }
-  while (result.size() != 1)
+  if (result.empty())
+  {
+    std::cout << '\n';
+    return 0;
+  }
+  while (result.size() > 1)
   {
     std::cout << std::fixed << std::setprecision(0) << result.top() << ' ';
     result.pop();
