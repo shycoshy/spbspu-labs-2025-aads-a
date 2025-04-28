@@ -9,6 +9,7 @@ int main(int argc, char* argv[])
   {
     std::string str;
     std::getline(std::cin, str);
+    if (str.empty()) return 0;
     asafov::queue_t queue;
     asafov::str_to_queue(queue, str);
     try
@@ -31,11 +32,16 @@ int main(int argc, char* argv[])
   {
     std::ifstream fin(argv[1]);
     std::stack<num_t> result;
-    if (!fin.eof()) return 0;
+    if (!fin.eof())
+    {
+      std::cout << '\n';
+       return 0;
+    }
     while (!fin.eof())
     {
       std::string str;
       std::getline(std::cin, str);
+      if (str.empty()) continue;
       asafov::queue_t queue;
       asafov::str_to_queue(queue, str);
       try

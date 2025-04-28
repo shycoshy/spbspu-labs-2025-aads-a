@@ -112,7 +112,19 @@ num_t asafov::count(queue_t& queue)
       }
       else if (token == "%")
       {
-        result = std::fmod(a, b);
+        if (b == 0)
+        {
+          while (!stack.empty())
+          {
+            stack.pop();
+          }
+          throw std::logic_error("division by zero!");
+        }
+        result = a % b;
+        if (result < 0)
+        {
+          result += std::abs(b);
+        }
         //std::clog << "a(" << a << ") % b(" << b << ") = result(" << result << ')' << std::endl;
       }
       stack.push(std::to_string(result));
