@@ -14,6 +14,13 @@ int main(int argc, char* argv[])
       asafov::queue_t queue;
       asafov::str_to_queue(queue, str);
       asafov::into_polish(queue);
+    }
+    catch (const std::logic_error& e)
+    {
+      return 0;
+    }
+    try
+    {
       std::cout << std::fixed << std::setprecision(0) << asafov::count(queue) << '\n';
     }
     catch (const std::logic_error& e)
@@ -35,6 +42,13 @@ int main(int argc, char* argv[])
         asafov::queue_t queue;
         asafov::str_to_queue(queue, str);
         asafov::into_polish(queue);
+      }
+      catch (const std::logic_error& e)
+      {
+        continue;
+      }
+      try
+      {
         result.push(asafov::count(queue));
       }
       catch (const std::logic_error& e)
