@@ -51,59 +51,22 @@ int main(int argc, char* argv[])
   else if (argc == 2)
   {
     std::ifstream fin(argv[1]);
-    if (!fin.eof())
-    {
-      std::cout << '\n';
-       return 0;
-    }
     while (!fin.eof())
     {
-      std::string str;
-      std::getline(std::cin, str);
-      if (str.empty()) continue;
-      asafov::queue_t queue;
-      asafov::str_to_queue(queue, str);
-      try
-      {
-        asafov::into_polish(queue);
-        result.push(asafov::count(queue));
-      }
-      catch (const std::invalid_argument& e)
-      {
-        continue;
-      }
-      catch (const std::logic_error& e)
-      {
-       std::cerr << e.what() << '\n';
-       return 1;
-      }
+      if (countExpression(fin, result)) return 1;
     }
-    fin.close();
-    if (result.empty())
+    while (result.size() != 1)
     {
-      std::cout << '\n';
-    }
-    else if (result.size() > 1)
-    {
-      std::cout << result.top() << '\n';
-    }
-    else
-    {
-      std::cout << std::fixed << std::setprecision(0);
-      std::cout << result.top();
+      std::cout << std::fixed << std::setprecision(0) << result.top() << ' ';
       result.pop();
-      while (!result.empty())
-      {
-        std::cout << ' ' << result.top();
-        result.pop();
-      }
-      std::cout << '\n';
     }
-    return 0;
+    std::cout << std::fixed << std::setprecision(0) << result.top() << '\n';
+    result.pop();
   }
   else
   {
     std::cerr << "invalid arguments\n";
     return 1;
   }
+  return 0;
 }
