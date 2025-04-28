@@ -11,9 +11,9 @@ int main(int argc, char* argv[])
     std::getline(std::cin, str);
     asafov::queue_t queue;
     asafov::str_to_queue(queue, str);
-    asafov::into_polish(queue);
     try
     {
+      asafov::into_polish(queue);
       std::cout << std::fixed << std::setprecision(0) << asafov::count(queue) << '\n';
     }
     catch (const std::invalid_argument& e)
@@ -31,15 +31,16 @@ int main(int argc, char* argv[])
   {
     std::ifstream fin(argv[1]);
     std::stack<num_t> result;
+    if (!fin.eof()) return 0;
     while (!fin.eof())
     {
       std::string str;
       std::getline(std::cin, str);
       asafov::queue_t queue;
       asafov::str_to_queue(queue, str);
-      asafov::into_polish(queue);
       try
       {
+        asafov::into_polish(queue);
         result.push(asafov::count(queue));
       }
       catch (const std::invalid_argument& e)

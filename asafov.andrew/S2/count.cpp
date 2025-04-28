@@ -62,6 +62,38 @@ num_t asafov::count(queue_t& queue)
       }
       else if (token == "*")
       {
+        if (a > 0 && b > 0 && a > 9223372036854775807ll / b)
+        {
+          while (!stack.empty())
+          {
+            stack.pop();
+          }
+          throw std::logic_error("overflow!");
+        }
+        else if (a > 0 && b < 0 && b < -9223372036854775807ll / a)
+        {
+          while (!stack.empty())
+          {
+            stack.pop();
+          }
+          throw std::logic_error("underflow!");
+        }
+        else if (a < 0 && b > 0 && a < -9223372036854775807ll / b)
+        {
+          while (!stack.empty())
+          {
+            stack.pop();
+          }
+          throw std::logic_error("underflow!");
+        }
+        else if (a < 0 && b < 0 && a < 9223372036854775807ll / b)
+        {
+          while (!stack.empty())
+          {
+            stack.pop();
+          }
+          throw std::logic_error("overflow!");
+        }
         result = a * b;
         //std::clog << "a(" << a << ") * b(" << b << ") = result(" << result << ')' << std::endl;
       }
