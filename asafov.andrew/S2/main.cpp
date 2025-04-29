@@ -35,13 +35,15 @@ int main(int argc, char* argv[])
 {
   std::stack<num_t> result;
   std::istream* is = nullptr;
+  std::ifstream fin;
   if (argc == 1)
   {
     is = &std::cin;
   }
   else if (argc == 2)
   {
-    is = &std::fstream(argv[1]);
+    fin.open(argv[1]);
+    is = &fin;
   }
   else
   {
