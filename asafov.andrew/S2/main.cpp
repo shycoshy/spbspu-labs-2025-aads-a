@@ -41,9 +41,7 @@ int main(int argc, char* argv[])
   }
   else if (argc == 2)
   {
-    std::ifstream fin(argv[1]);
-    is = &fin;
-    return 0;
+    is = &std::fstream(argv[1]);
   }
   else
   {
