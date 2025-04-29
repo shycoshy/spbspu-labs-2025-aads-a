@@ -27,10 +27,8 @@ num_t asafov::count(queue_t& queue)
         throw std::invalid_argument("not enough operands!");
       }
       num_t b = std::stoll(stack.top());
-      //std::clog << "b(" << stack.top() << ") = " << b << std::endl;
       stack.pop();
       num_t a = std::stoll(stack.top());
-      //std::clog << "a(" << stack.top() << ") = " << a << std::endl;
       stack.pop();
       num_t result = 0;
 
@@ -45,7 +43,6 @@ num_t asafov::count(queue_t& queue)
           throw std::logic_error("overflow!");
         }
         result = a + b;
-        //std::clog << "a(" << a << ") + b(" << b << ") = result(" << result << ')' << std::endl;
       }
       else if (token == "-")
       {
@@ -58,7 +55,6 @@ num_t asafov::count(queue_t& queue)
           throw std::logic_error("underflow!");
         }
         result = a - b;
-        //std::clog << "a(" << a << ") - b(" << b << ") = result(" << result << ')' << std::endl;
       }
       else if (token == "*")
       {
@@ -95,7 +91,6 @@ num_t asafov::count(queue_t& queue)
           throw std::logic_error("overflow!");
         }
         result = a * b;
-        //std::clog << "a(" << a << ") * b(" << b << ") = result(" << result << ')' << std::endl;
       }
       else if (token == "/")
       {
@@ -108,7 +103,6 @@ num_t asafov::count(queue_t& queue)
           throw std::logic_error("division by zero!");
         }
         result = a / b;
-        //std::clog << "a(" << a << ") / b(" << b << ") = result(" << result << ')' << std::endl;
       }
       else if (token == "%")
       {
@@ -125,7 +119,6 @@ num_t asafov::count(queue_t& queue)
         {
           result += std::abs(b);
         }
-        //std::clog << "a(" << a << ") % b(" << b << ") = result(" << result << ')' << std::endl;
       }
       stack.push(std::to_string(result));
     }

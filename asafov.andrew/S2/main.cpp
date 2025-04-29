@@ -49,10 +49,11 @@ int main(int argc, char* argv[])
     std::cerr << "invalid arguments\n";
     return 1;
   }
+
   while (!is->eof())
   {
     int error = countExpression(*is, result);
-    if (error == 1) break;
+    if (error == 1) continue;
     else if (error == 2) return 1;
   }
   if (result.empty())
