@@ -25,7 +25,7 @@ namespace
     catch (const std::logic_error& e)
     {
       std::cerr << e.what() << '\n';
-      return 1;
+      return 2;
     }
     return 0;
   }
@@ -51,7 +51,9 @@ int main(int argc, char* argv[])
   }
   while (!is->eof())
   {
-    if (countExpression(*is, result)) return 1;
+    int error = countExpression(*is, result);
+    if (error == 1) break;
+    else if (error == 2) return 1;
   }
   if (result.empty())
   {
