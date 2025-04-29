@@ -66,7 +66,7 @@ void asafov::into_polish(queue_t& queue)
   {
     if (ops.top() == "(")
     {
-      throw std::invalid_argument("mismatched parentheses!");
+      throw std::logic_error("mismatched parentheses!");
     }
     output.push(ops.top());
     ops.pop();
