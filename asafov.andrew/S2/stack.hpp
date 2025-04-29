@@ -1,90 +1,75 @@
 #ifndef STACK_HPP
 #define STACK_HPP
+#include <iostream>
 #include <stdexcept>
 namespace asafov
 {
-  template <typename T>
+  template<typename T>
   class stack
   {
   public:
     stack():
-    items_(nullptr),
-    size_(0)
+      data(nullptr),
+      capacity(0),
+      count(0)
     {}
+
     ~stack()
     {
-      delete[] items_;
+      delete[] data;
     }
-    T back() const noexcept
+
+    void push(const T& value)
     {
-      return items_[size_-1];
+      if (count == capacity) resize(capacity == 0 ? 1 : capacity * 2);
+      data[count++] = value;
     }
-    T front() const noexcept
-    {
-      return items_[0];
-    }
-    void push(T value)
-    {
-      T* temp = items_;
-      size_++;
-      items_ = new T[size_];
-      for (size_t i = 0; i < (size_ - 1); i++)
-      {
-        items_[i] = temp[i];
-      }
-      items_[size_ - 1] = value;
-      delete[] temp;
-    }
-    T drop()
-    {
-      size_--;
-      T value = items_[size_];
-      if (size_ == 0)
-      {
-        delete[] items_;
-      }
-      else
-      {
-        T* temp = items_;
-        items_ = new T[size_];
-        for (size_t i = 0; i < size_; i++)
-        {
-          items_[i] = temp[i];
-        }
-        delete[] temp;
-      }
-      return value;
-    }
+
     void pop()
     {
-      size_--;
-      T value = items_[size_];
-      if (size_ == 0)
-      {
-        delete[] items_;
-      }
-      else
-      {
-        T* temp = items_;
-        items_ = new T[size_];
-        for (size_t i = 0; i < size_; i++)
-        {
-          items_[i] = temp[i];
-        }
-        delete[] temp;
-      }
+      if (empty()) throw std::out_of_range("stack::pop(): empty stack");
+      --count;
     }
-    size_t size() const noexcept
+
+    T& top()
     {
-      return size_;
+      if (empty()) throw std::out_of_range("stack::top(): empty stack");
+      return data[count - 1];
     }
-    bool empty () const noexcept
+
+    const T& top() const
     {
-      return size_ == 0;
+      if (empty()) throw std::out_of_range("stack::top(): empty stack");
+      return data[count - 1];
+    }
+
+    bool empty() const
+    {
+      return count == 0;
+    }
+
+    size_t size() const
+    {
+      return count;
+    }
+
+    void clear()
+    {
+      count = 0;
     }
   private:
-    T* items_;
-    size_t size_;
+    T* data;
+    size_t capacity;
+    size_t count;
+
+    void resize(size_t new_capacity)
+    {
+      T* new_data = new T[new_capacity];
+      for (size_t i = 0; i < count; ++i) new_data[i] = std::move(data[i]);
+      delete[] data;
+      data = new_data;
+      capacity = new_capacity;
+    }
   };
 }
 #endif

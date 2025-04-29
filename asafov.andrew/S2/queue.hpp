@@ -1,90 +1,86 @@
 #ifndef QUEUE_HPP
 #define QUEUE_HPP
+#include <iostream>
 #include <stdexcept>
 namespace asafov
 {
-  template <typename T>
+  template<typename T>
   class queue
   {
   public:
     queue():
-    items_(nullptr),
-    size_(0)
+      data(nullptr),
+      capacity(0),
+      count(0),
+      front_index(0),
+      back_index(0)
     {}
+
     ~queue()
     {
-      delete[] items_;
+      delete[] data;
     }
-    T back() const noexcept
+
+    void push(const T& value)
     {
-      return items_[size_-1];
+      if (count == capacity) resize(capacity == 0 ? 1 : capacity * 2);
+      data[back_index] = value;
+      back_index = (back_index + 1) % capacity;
+      ++count;
     }
-    T front() const noexcept
-    {
-      return items_[0];
-    }
-    void push(T value)
-    {
-      T* temp = items_;
-      size_++;
-      items_ = new T[size_];
-      for (size_t i = 0; i < (size_ - 1); i++)
-      {
-        items_[i] = temp[i];
-      }
-      items_[size_ - 1] = value;
-      delete[] temp;
-    }
-    T drop()
-    {
-      size_--;
-      T value = items_[0];
-      if (size_ == 0)
-      {
-        delete[] items_;
-      }
-      else
-      {
-        T* temp = items_;
-        items_ = new T[size_];
-        for (size_t i = 0; i < size_; i++)
-        {
-          items_[i] = temp[i + 1];
-        }
-        delete[] temp;
-      }
-      return value;
-    }
+
     void pop()
     {
-      size_--;
-      T value = items_[0];
-      if (size_ == 0)
-      {
-        delete[] items_;
-      }
-      else
-      {
-        T* temp = items_;
-        items_ = new T[size_];
-        for (size_t i = 0; i < size_; i++)
-        {
-          items_[i] = temp[i + 1];
-        }
-        delete[] temp;
-      }
+      if (empty()) throw std::out_of_range("queue::pop(): empty queue");
+      front_index = (front_index + 1) % capacity;
+      --count;
     }
-    size_t size() const noexcept
+
+    T& front()
     {
-      return size_;
+      if (empty()) throw std::out_of_range("queue::front(): empty queue");
+      return data[front_index];
     }
-    bool empty () const noexcept
+
+    const T& front() const
     {
-      return size_ == 0;
+      if (empty()) throw std::out_of_range("queue::front(): empty queue");
+      return data[front_index];
+    }
+
+    bool empty() const
+    {
+      return count == 0;
+    }
+
+    size_t size() const
+    {
+      return count;
+    }
+
+    void clear()
+    {
+      front_index = 0;
+      back_index = 0;
+      count = 0;
     }
   private:
-    T* items_;
-    size_t size_;
+    T* data;
+    size_t capacity;
+    size_t count;
+    size_t front_index;
+    size_t back_index;
+
+    void resize(size_t new_capacity)
+    {
+        T* new_data = new T[new_capacity];
+        for (size_t i = 0; i < count; ++i) new_data[i] = std::move(data[(front_index + i) % capacity]);
+        delete[] data;
+        data = new_data;
+        front_index = 0;
+        back_index = count;
+        capacity = new_capacity;
+    }
   };
 }
 #endif
