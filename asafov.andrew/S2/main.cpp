@@ -3,37 +3,9 @@
 #include <fstream>
 #include "countFunctions.h"
 
-namespace
-{
-  int countExpression(std::istream& is, std::stack<num_t>& result)
-  {
-    std::string str;
-    std::getline(is, str);
-    if (str.empty()) return 0;
-    asafov::queue_t queue;
-    asafov::str_to_queue(queue, str);
-    try
-    {
-      asafov::into_polish(queue);
-      result.push(asafov::count(queue));
-    }
-    catch (const std::invalid_argument& e)
-    {
-      std::cerr << e.what() << '\n';
-      return 1;
-    }
-    catch (const std::logic_error& e)
-    {
-      std::cerr << e.what() << '\n';
-      return 2;
-    }
-    return 0;
-  }
-}
-
 int main(int argc, char* argv[])
 {
-  std::stack<num_t> result;
+  std::stack<asafov::num_t> result;
   std::istream* is = nullptr;
   std::ifstream fin;
   if (argc == 1)
@@ -53,7 +25,7 @@ int main(int argc, char* argv[])
 
   while (!is->eof())
   {
-    int error = countExpression(*is, result);
+    int error = asafov::evaluateExpressionFromString(*is, result);
     if (error == 1) continue;
     else if (error == 2) return 1;
   }

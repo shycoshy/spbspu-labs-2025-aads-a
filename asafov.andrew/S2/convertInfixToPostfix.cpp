@@ -16,7 +16,7 @@ namespace
   }
 }
 
-void asafov::into_polish(queue_t& queue)
+void asafov::convertInfixToPostfix(queue_t& queue)
 {
   queue_t output;
   stack_t ops;
