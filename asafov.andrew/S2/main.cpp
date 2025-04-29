@@ -43,6 +43,7 @@ int main(int argc, char* argv[])
   {
     std::ifstream fin(argv[1]);
     is = &fin;
+    return 0;
   }
   else
   {
