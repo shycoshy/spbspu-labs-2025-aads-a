@@ -98,7 +98,7 @@ bool asafov::processCommand(maps_t& datasets, const std::string& line)
     std::string name;
     if (ss >> name)
     {
-      printDataset(datasets, name);
+      printMap(datasets, name);
       return true;
     }
   }
@@ -131,7 +131,7 @@ bool asafov::processCommand(maps_t& datasets, const std::string& line)
     std::string newName, left, right;
     if (ss >> newName >> left >> right)
     {
-      if (!unionSets(datasets, newName, left, right))
+      if (!unionMaps(datasets, newName, left, right))
       {
         std::cout << "invalid command!\n";
       }
