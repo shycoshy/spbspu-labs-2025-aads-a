@@ -109,7 +109,7 @@ bool asafov::processCommand(maps_t& datasets, const std::string& line)
     {
       if (!complement(datasets, newName, left, right))
       {
-        std::cout << "invalid command!\n";
+        std::cout << "<INVALID COMMAND>\n";
       }
       return true;
     }
@@ -121,7 +121,7 @@ bool asafov::processCommand(maps_t& datasets, const std::string& line)
     {
       if (!intersect(datasets, newName, left, right))
       {
-        std::cout << "invalid command!\n";
+        std::cout << "<INVALID COMMAND>\n";
       }
       return true;
     }
@@ -133,12 +133,12 @@ bool asafov::processCommand(maps_t& datasets, const std::string& line)
     {
       if (!unionMaps(datasets, newName, left, right))
       {
-        std::cout << "invalid command!\n";
+        std::cout << "<INVALID COMMAND>\n";
       }
       return true;
     }
   }
 
-  std::cout << "invalid command!\n";
+  std::cout << "<INVALID COMMAND>\n";
   return false;
 }
