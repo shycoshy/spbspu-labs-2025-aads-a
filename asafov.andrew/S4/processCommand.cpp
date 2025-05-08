@@ -5,22 +5,22 @@
 void asafov::printMap(const maps_t& maps, const std::string& name)
 {
   auto it = maps.find(name);
-  if (it == maps.end())
+  if (it == maps.cend())
   {
     std::cout << "<INVALID COMMAND>" << std::endl;
     return;
   }
 
-  if (it->second.empty())
+  if ((*it).second.empty())
   {
     std::cout << "<EMPTY>" << std::endl;
     return;
   }
 
   std::cout << name;
-  for (auto it2 = it->second.begin(); it2 != it->second.end(); ++it2)
+  for (auto it2 = (*it).second.begin(); it2 != (*it).second.end(); ++it2)
   {
-    std::cout << " " << it2->first << " " << it2->second;
+    std::cout << " " << (*it2).first << " " << (*it2).second;
   }
   std::cout << std::endl;
 }
@@ -38,9 +38,9 @@ bool asafov::complement(maps_t& maps, const std::string& newName, const std::str
 
   for (auto it = leftMap.begin(); it != leftMap.end(); ++it)
   {
-    if (rightMap.find(it->first) == rightMap.end())
+    if (rightMap.find((*it).first) == rightMap.end())
     {
-      result[it->first] = it->second;
+      result[(*it).first] = (*it).second;
     }
   }
 
@@ -61,9 +61,9 @@ bool asafov::intersect(maps_t& maps, const std::string& newName, const std::stri
 
   for (auto it = leftMap.begin(); it != leftMap.end(); ++it)
   {
-    if (rightMap.find(it->first) != rightMap.end())
+    if (rightMap.find((*it).first) != rightMap.end())
     {
-      result[it->first] = it->second;
+      result[(*it).first] = (*it).second;
     }
   }
 
@@ -83,9 +83,9 @@ bool asafov::unionMaps(maps_t& maps, const std::string& newName, const std::stri
 
   for (auto it = rightMap.begin(); it != rightMap.end(); ++it)
   {
-    if (result.find(it->first) == result.end())
+    if (result.find((*it).first) == result.end())
     {
-      result[it->first] = it->second;
+      result[(*it).first] = (*it).second;
     }
   }
 

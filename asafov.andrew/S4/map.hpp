@@ -275,7 +275,7 @@ namespace asafov
       throw std::out_of_range("Key not found");
     }
 
-    Value& operator[](Key&& key)
+    Value& operator[](const Key& key)
     {
       node* n = find_node(root_, key);
       if (n)
@@ -447,6 +447,16 @@ namespace asafov
     iterator end()
     {
       return iterator(nullptr);
+    }
+
+    const_iterator begin() const
+    {
+      return const_iterator(find_min(root_));
+    }
+
+    const_iterator end() const
+    {
+      return const_iterator(nullptr);
     }
 
     const_iterator cbegin() const
