@@ -24,7 +24,10 @@ namespace asafov
       Key key1, key2;
       Value val1, val2;
       bool hasSecond;
-      node *left, middle, right, parent;
+      node* left;
+      node* middle;
+      node* right;
+      node* parent;
     };
 
   public:
