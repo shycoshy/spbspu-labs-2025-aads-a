@@ -18,8 +18,7 @@ namespace asafov
         middle(nullptr),
         right(nullptr),
         parent(nullptr)
-      {
-      }
+      {}
 
       Key key1, key2;
       Value val1, val2;
@@ -29,7 +28,6 @@ namespace asafov
       node* right;
       node* parent;
     };
-
   public:
     map() = default;
 
@@ -48,8 +46,9 @@ namespace asafov
       return *this;
     }
 
-    map(map&& other) noexcept
-      : root_(other.root_), tree_size_(other.tree_size_)
+    map(map&& other) noexcept:
+      root_(other.root_),
+      tree_size_(other.tree_size_)
     {
       other.root_ = nullptr;
       other.tree_size_ = 0;
@@ -83,13 +82,30 @@ namespace asafov
       return tree_size_;
     }
 
-    Value* find(const Key& key) const
+    iterator find(const Key& key)
     {
       node* n = find_node(root_, key);
-      if (!n) return nullptr;
-      if (n->key1 == key) return &n->val1;
-      if (n->hasSecond && n->key2 == key) return &n->val2;
-      return nullptr;
+      if (!n) return end();
+      if (n->key1 == key) return iterator(n);
+      if (n->hasSecond && n->key2 == key) {
+        iterator it(n);
+        ++it;
+        return it;
+      }
+      return end();
+    }
+
+    const_iterator find(const Key& key) const
+    {
+      node* n = find_node(root_, key);
+      if (!n) return cend();
+      if (n->key1 == key) return const_iterator(n);
+      if (n->hasSecond && n->key2 == key) {
+        const_iterator it(n);
+        ++it;
+        return it;
+      }
+      return cend();
     }
 
     void swap(map& other) noexcept
@@ -107,7 +123,16 @@ namespace asafov
       throw std::out_of_range("Key not found");
     }
 
-    Value& operator[](const Key& key)
+    const Value& at(const Key& key) const
+    {
+      node* n = find_node(root_, key);
+      if (!n) throw std::out_of_range("Key not found");
+      if (n->key1 == key) return n->val1;
+      if (n->hasSecond && n->key2 == key) return n->val2;
+      throw std::out_of_range("Key not found");
+    }
+
+    Value& operator[](Key&& key)
     {
       node* n = find_node(root_, key);
       if (n)
