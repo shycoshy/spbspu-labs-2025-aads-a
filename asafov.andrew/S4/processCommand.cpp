@@ -82,13 +82,11 @@ bool asafov::unionMaps(maps_t& maps, const std::string& newName, const std::stri
   const map_t& leftMap = maps[left];
   const map_t& rightMap = maps[right];
 
-  // First add all elements from left map
   for (auto it = leftMap.begin(); it != leftMap.end(); ++it)
   {
     result[(*it).first] = (*it).second;
   }
 
-  // Then add elements from right map that don't exist in result
   for (auto it = rightMap.begin(); it != rightMap.end(); ++it)
   {
     if (result.find((*it).first) == result.end())

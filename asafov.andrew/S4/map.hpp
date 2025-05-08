@@ -137,12 +137,12 @@ namespace asafov
 
       bool operator!=(const iterator& other) const
       {
-        return current_ != other.current_;
+        return current_ != other.current_ || (current_ && secondKey_ != other.secondKey_);
       }
 
       bool operator==(const iterator& other) const
       {
-        return current_ == other.current_;
+        return current_ == other.current_ && (!current_ || secondKey_ == other.secondKey_);
       }
 
     private:
@@ -209,18 +209,19 @@ namespace asafov
 
       bool operator!=(const const_iterator& other) const
       {
-        return current_ != other.current_;
+        return current_ != other.current_ || (current_ && secondKey_ != other.secondKey_);
       }
 
       bool operator==(const const_iterator& other) const
       {
-        return current_ == other.current_;
+        return current_ == other.current_ && (!current_ || secondKey_ == other.secondKey_);
       }
 
     private:
       node* find_min(node* n) const
       {
-        while (n && n->left) n = n->left;
+        while (n && n->left)
+          n = n->left;
         return n;
       }
     };
@@ -377,12 +378,6 @@ namespace asafov
 
       if (key < n->key1)
       {
-        Key temp_key = n->key1;
-        Value temp_val = n->val1;
-        n->key1 = key;
-        n->val1 = value;
-        n->key2 = temp_key;
-        n->val2 = temp_val;
         node* child = insert_node(n->left, n, key, value, inserted);
         n->left = child;
       }
@@ -447,7 +442,10 @@ namespace asafov
 
     iterator begin()
     {
-      return iterator(find_min(root_));
+      if (!root_) return end();
+      node* n = root_;
+      while (n->left) n = n->left;
+      return iterator(n);
     }
 
     iterator end()
@@ -457,7 +455,10 @@ namespace asafov
 
     const_iterator begin() const
     {
-      return const_iterator(find_min(root_));
+      if (!root_) return cend();
+      node* n = root_;
+      while (n->left) n = n->left;
+      return const_iterator(n);
     }
 
     const_iterator end() const
@@ -467,7 +468,10 @@ namespace asafov
 
     const_iterator cbegin() const
     {
-      return const_iterator(find_min(root_));
+      if (!root_) return cend();
+      node* n = root_;
+      while (n->left) n = n->left;
+      return const_iterator(n);
     }
 
     const_iterator cend() const
