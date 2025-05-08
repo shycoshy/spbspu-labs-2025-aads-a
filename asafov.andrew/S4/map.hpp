@@ -377,6 +377,12 @@ namespace asafov
 
       if (key < n->key1)
       {
+        Key temp_key = n->key1;
+        Value temp_val = n->val1;
+        n->key1 = key;
+        n->val1 = value;
+        n->key2 = temp_key;
+        n->val2 = temp_val;
         node* child = insert_node(n->left, n, key, value, inserted);
         n->left = child;
       }
