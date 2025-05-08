@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MAP_HPP
+#define MAP_HPP
 #include <iostream>
 #include <stdexcept>
 
@@ -434,3 +435,4 @@ namespace asafov
     size_t tree_size_ = 0;
   };
 }
+#endif
