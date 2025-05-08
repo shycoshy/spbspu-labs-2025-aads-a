@@ -82,6 +82,149 @@ namespace asafov
       return tree_size_;
     }
 
+    class iterator
+    {
+      node* current_;
+      bool secondKey_;
+
+    public:
+      iterator(node* n = nullptr)
+        : current_(n), secondKey_(false)
+      {
+      }
+
+      std::pair< const Key&, Value& > operator*() const
+      {
+        if (secondKey_)
+          return {current_->key2, current_->val2};
+        else
+          return {current_->key1, current_->val1};
+      }
+
+      iterator& operator++()
+      {
+        if (!current_) return *this;
+
+        if (!secondKey_ && current_->hasSecond)
+        {
+          secondKey_ = true;
+          return *this;
+        }
+
+        secondKey_ = false;
+
+        if (current_->hasSecond && current_->middle)
+        {
+          current_ = find_min(current_->middle);
+        }
+        else if (current_->right)
+        {
+          current_ = find_min(current_->right);
+        }
+        else
+        {
+          node* p = current_->parent;
+          while (p && (current_ == p->right || (p->hasSecond && current_ == p->middle)))
+          {
+            current_ = p;
+            p = p->parent;
+          }
+          current_ = p;
+        }
+
+        return *this;
+      }
+
+      bool operator!=(const iterator& other) const
+      {
+        return current_ != other.current_;
+      }
+
+      bool operator==(const iterator& other) const
+      {
+        return current_ == other.current_;
+      }
+
+    private:
+      node* find_min(node* n) const
+      {
+        while (n && n->left)
+          n = n->left;
+        return n;
+      }
+    };
+
+    class const_iterator
+    {
+      node* current_;
+      bool secondKey_;
+
+    public:
+      const_iterator(node* n = nullptr)
+        : current_(n), secondKey_(false)
+      {
+      }
+
+      std::pair< const Key&, const Value& > operator*() const
+      {
+        if (secondKey_)
+          return {current_->key2, current_->val2};
+        else
+          return {current_->key1, current_->val1};
+      }
+
+      const_iterator& operator++()
+      {
+        if (!current_) return *this;
+
+        if (!secondKey_ && current_->hasSecond)
+        {
+          secondKey_ = true;
+          return *this;
+        }
+
+        secondKey_ = false;
+
+        if (current_->hasSecond && current_->middle)
+        {
+          current_ = find_min(current_->middle);
+        }
+        else if (current_->right)
+        {
+          current_ = find_min(current_->right);
+        }
+        else
+        {
+          node* p = current_->parent;
+          while (p && (current_ == p->right || (p->hasSecond && current_ == p->middle)))
+          {
+            current_ = p;
+            p = p->parent;
+          }
+          current_ = p;
+        }
+
+        return *this;
+      }
+
+      bool operator!=(const const_iterator& other) const
+      {
+        return current_ != other.current_;
+      }
+
+      bool operator==(const const_iterator& other) const
+      {
+        return current_ == other.current_;
+      }
+
+    private:
+      node* find_min(node* n) const
+      {
+        while (n && n->left) n = n->left;
+        return n;
+      }
+    };
+
     iterator find(const Key& key)
     {
       node* n = find_node(root_, key);
@@ -295,148 +438,6 @@ namespace asafov
     }
 
   public:
-    class iterator
-    {
-      node* current_;
-      bool secondKey_;
-
-    public:
-      iterator(node* n = nullptr)
-        : current_(n), secondKey_(false)
-      {
-      }
-
-      std::pair< const Key&, Value& > operator*() const
-      {
-        if (secondKey_)
-          return {current_->key2, current_->val2};
-        else
-          return {current_->key1, current_->val1};
-      }
-
-      iterator& operator++()
-      {
-        if (!current_) return *this;
-
-        if (!secondKey_ && current_->hasSecond)
-        {
-          secondKey_ = true;
-          return *this;
-        }
-
-        secondKey_ = false;
-
-        if (current_->hasSecond && current_->middle)
-        {
-          current_ = find_min(current_->middle);
-        }
-        else if (current_->right)
-        {
-          current_ = find_min(current_->right);
-        }
-        else
-        {
-          node* p = current_->parent;
-          while (p && (current_ == p->right || (p->hasSecond && current_ == p->middle)))
-          {
-            current_ = p;
-            p = p->parent;
-          }
-          current_ = p;
-        }
-
-        return *this;
-      }
-
-      bool operator!=(const iterator& other) const
-      {
-        return current_ != other.current_;
-      }
-
-      bool operator==(const iterator& other) const
-      {
-        return current_ == other.current_;
-      }
-
-    private:
-      node* find_min(node* n) const
-      {
-        while (n && n->left)
-          n = n->left;
-        return n;
-      }
-    };
-
-    class const_iterator
-    {
-      node* current_;
-      bool secondKey_;
-
-    public:
-      const_iterator(node* n = nullptr)
-        : current_(n), secondKey_(false)
-      {
-      }
-
-      std::pair< const Key&, const Value& > operator*() const
-      {
-        if (secondKey_)
-          return {current_->key2, current_->val2};
-        else
-          return {current_->key1, current_->val1};
-      }
-
-      const_iterator& operator++()
-      {
-        if (!current_) return *this;
-
-        if (!secondKey_ && current_->hasSecond)
-        {
-          secondKey_ = true;
-          return *this;
-        }
-
-        secondKey_ = false;
-
-        if (current_->hasSecond && current_->middle)
-        {
-          current_ = find_min(current_->middle);
-        }
-        else if (current_->right)
-        {
-          current_ = find_min(current_->right);
-        }
-        else
-        {
-          node* p = current_->parent;
-          while (p && (current_ == p->right || (p->hasSecond && current_ == p->middle)))
-          {
-            current_ = p;
-            p = p->parent;
-          }
-          current_ = p;
-        }
-
-        return *this;
-      }
-
-      bool operator!=(const const_iterator& other) const
-      {
-        return current_ != other.current_;
-      }
-
-      bool operator==(const const_iterator& other) const
-      {
-        return current_ == other.current_;
-      }
-
-    private:
-      node* find_min(node* n) const
-      {
-        while (n && n->left) n = n->left;
-        return n;
-      }
-    };
 
     iterator begin()
     {
