@@ -2,104 +2,92 @@
 #include <iostream>
 #include <sstream>
 
-void asafov::printMap(const maps_t& maps, const std::string& name)
+void asafov::printMap(const maps_t& datasets, const std::string& name)
 {
-  auto it = maps.find(name);
-  if (it == maps.cend())
+  auto it = datasets.find(name);
+  if (it == datasets.end() || it->second.empty())
   {
-    std::cout << "<INVALID COMMAND>" << std::endl;
-    return;
-  }
-
-  if ((*it).second.empty())
-  {
-    std::cout << "<EMPTY>" << std::endl;
+    std::cout << "<EMPTY>\n";
     return;
   }
 
   std::cout << name;
-  for (auto it2 = (*it).second.begin(); it2 != (*it).second.end(); ++it2)
+  for (auto it2 = it->second.begin(); it2 != it->second.end(); ++it2)
   {
-    std::cout << " " << (*it2).first << " " << (*it2).second;
+    std::cout << " " << it2->first << " " << it2->second;
   }
-  std::cout << std::endl;
+  std::cout << '\n';
 }
 
-bool asafov::complement(maps_t& maps, const std::string& newName, const std::string& left, const std::string& right)
+bool asafov::complement(maps_t& datasets, const std::string& newName, const std::string& left, const std::string& right)
 {
-  if (maps.find(left) == maps.end() || maps.find(right) == maps.end())
+  if (datasets.find(left) == datasets.end() || datasets.find(right) == datasets.end())
   {
     return false;
   }
 
   map_t result;
-  const map_t& leftMap = maps[left];
-  const map_t& rightMap = maps[right];
+  const map_t& leftMap = datasets[left];
+  const map_t& rightMap = datasets[right];
 
   for (auto it = leftMap.begin(); it != leftMap.end(); ++it)
   {
-    if (rightMap.find((*it).first) == rightMap.end())
+    if (rightMap.find(it->first) == rightMap.end())
     {
-      result[(*it).first] = (*it).second;
+      result[it->first] = it->second;
     }
   }
 
-  maps[newName] = result;
+  datasets[newName] = result;
   return true;
 }
 
-bool asafov::intersect(maps_t& maps, const std::string& newName, const std::string& left, const std::string& right)
+bool asafov::intersect(maps_t& datasets, const std::string& newName, const std::string& left, const std::string& right)
 {
-  if (maps.find(left) == maps.end() || maps.find(right) == maps.end())
+  if (datasets.find(left) == datasets.end() || datasets.find(right) == datasets.end())
   {
     return false;
   }
 
   map_t result;
-  const map_t& leftMap = maps[left];
-  const map_t& rightMap = maps[right];
+  const map_t& leftMap = datasets[left];
+  const map_t& rightMap = datasets[right];
 
   for (auto it = leftMap.begin(); it != leftMap.end(); ++it)
   {
-    if (rightMap.find((*it).first) != rightMap.end())
+    if (rightMap.find(it->first) != rightMap.end())
     {
-      result[(*it).first] = (*it).second;
+      result[it->first] = it->second;
     }
   }
 
-  maps[newName] = result;
+  datasets[newName] = result;
   return true;
 }
 
-bool asafov::unionMaps(maps_t& maps, const std::string& newName, const std::string& left, const std::string& right)
+bool asafov::unionMaps(maps_t& datasets, const std::string& newName, const std::string& left, const std::string& right)
 {
-  if (maps.find(left) == maps.end() || maps.find(right) == maps.end())
+  if (datasets.find(left) == datasets.end() || datasets.find(right) == datasets.end())
   {
     return false;
   }
 
-  map_t result;
-  const map_t& leftMap = maps[left];
-  const map_t& rightMap = maps[right];
-
-  for (auto it = leftMap.begin(); it != leftMap.end(); ++it)
-  {
-    result[(*it).first] = (*it).second;
-  }
+  map_t result = datasets[left];
+  const map_t& rightMap = datasets[right];
 
   for (auto it = rightMap.begin(); it != rightMap.end(); ++it)
   {
-    if (result.find((*it).first) == result.end())
+    if (result.find(it->first) == result.end())
     {
-      result[(*it).first] = (*it).second;
+      result[it->first] = it->second;
     }
   }
 
-  maps[newName] = result;
+  datasets[newName] = result;
   return true;
 }
 
-bool asafov::processCommand(maps_t& maps, const std::string& line)
+bool asafov::processCommand(maps_t& datasets, const std::string& line)
 {
   std::istringstream ss(line);
   std::string command;
@@ -110,7 +98,7 @@ bool asafov::processCommand(maps_t& maps, const std::string& line)
     std::string name;
     if (ss >> name)
     {
-      printMap(maps, name);
+      printMap(datasets, name);
       return true;
     }
   }
@@ -119,9 +107,9 @@ bool asafov::processCommand(maps_t& maps, const std::string& line)
     std::string newName, left, right;
     if (ss >> newName >> left >> right)
     {
-      if (!complement(maps, newName, left, right))
+      if (!complement(datasets, newName, left, right))
       {
-        std::cout << "<INVALID COMMAND>\n";
+        std::cout << "invalid command!\n";
       }
       return true;
     }
@@ -131,9 +119,9 @@ bool asafov::processCommand(maps_t& maps, const std::string& line)
     std::string newName, left, right;
     if (ss >> newName >> left >> right)
     {
-      if (!intersect(maps, newName, left, right))
+      if (!intersect(datasets, newName, left, right))
       {
-        std::cout << "<INVALID COMMAND>\n";
+        std::cout << "invalid command!\n";
       }
       return true;
     }
@@ -143,14 +131,14 @@ bool asafov::processCommand(maps_t& maps, const std::string& line)
     std::string newName, left, right;
     if (ss >> newName >> left >> right)
     {
-      if (!unionMaps(maps, newName, left, right))
+      if (!unionMaps(datasets, newName, left, right))
       {
-        std::cout << "<INVALID COMMAND>\n";
+        std::cout << "invalid command!\n";
       }
       return true;
     }
   }
 
-  std::cout << "<INVALID COMMAND>\n";
+  std::cout << "invalid command!\n";
   return false;
 }
