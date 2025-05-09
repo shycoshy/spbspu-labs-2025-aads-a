@@ -14,8 +14,8 @@ void asafov::printMap(const maps_t& datasets, const std::string& name)
   std::cout << name;
   for (auto it2 = (*it).second.begin(); it2 != (*it).second.end(); ++it2)
   {
-    auto [key, value] = *it2;
-    std::cout << " " << key << " " << value;
+    const auto& pair = *it2;
+    std::cout << " " << pair.first << " " << pair.second;
   }
   std::cout << '\n';
 }
@@ -33,10 +33,10 @@ bool asafov::complement(maps_t& datasets, const std::string& newName, const std:
 
   for (auto it = leftMap.begin(); it != leftMap.end(); ++it)
   {
-    auto [key, value] = *it;
-    if (rightMap.find(key) == rightMap.end())
+    const auto& pair = *it;
+    if (rightMap.find(pair.first) == rightMap.end())
     {
-      result[key] = value;
+      result[pair.first] = pair.second;
     }
   }
 
@@ -57,10 +57,10 @@ bool asafov::intersect(maps_t& datasets, const std::string& newName, const std::
 
   for (auto it = leftMap.begin(); it != leftMap.end(); ++it)
   {
-    auto [key, value] = *it;
-    if (rightMap.find(key) != rightMap.end())
+    const auto& pair = *it;
+    if (rightMap.find(pair.first) != rightMap.end())
     {
-      result[key] = value;
+      result[pair.first] = pair.second;
     }
   }
 
@@ -80,10 +80,10 @@ bool asafov::unionMaps(maps_t& datasets, const std::string& newName, const std::
 
   for (auto it = rightMap.begin(); it != rightMap.end(); ++it)
   {
-    auto [key, value] = *it;
-    if (result.find(key) == result.end())
+    const auto& pair = *it;
+    if (result.find(pair.first) == result.end())
     {
-      result[key] = value;
+      result[pair.first] = pair.second;
     }
   }
 
