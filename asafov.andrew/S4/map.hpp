@@ -7,7 +7,7 @@
 
 namespace asafov
 {
-  template< class Key, class Value, class Comparator = std::less<Key>>
+  template< class Key, class Value, class Comparator = std::less<Key> >
   class map
   {
     struct node
@@ -67,6 +67,11 @@ namespace asafov
       root_(nullptr),
       size_(0)
     {}
+
+    ~map()
+    {
+      clear(root_);
+    }
 
     void insert(Key& k, Value& v)
     {
@@ -194,9 +199,14 @@ namespace asafov
     class const_iterator
     {
     public:
-      const_iterator() : current(nullptr), pos(0) {}
-      const_iterator(const node* n, unsigned p = 0) : current(n), pos(p) {}
-      const_iterator(const const_iterator& it) : current(it.current), pos(it.pos) {}
+      const_iterator():
+        current(nullptr),
+        pos(0)
+      {}
+      const_iterator(const node* n, unsigned p = 0):
+        current(n),
+        pos(p)
+      {}
 
       const std::pair<const Key, Value>& operator*() const
       {
@@ -210,81 +220,76 @@ namespace asafov
         }
       }
 
-    const std::pair<const Key, Value>* operator->() const
-    {
+      const std::pair<const Key, Value>* operator->() const
+      {
         if (pos == 0) 
-            return reinterpret_cast<const std::pair<const Key, Value>*>(&current->key1);
+        {
+          return reinterpret_cast<const std::pair<const Key, Value>*>(&current->key1);
+        }
         return reinterpret_cast<const std::pair<const Key, Value>*>(&current->key2);
-    }
+      }
 
-    const_iterator& operator++()
-    {
-        if (!current) return *this;
-
-        // Если текущий узел 3-нода и мы на первом ключе
+      const_iterator& operator++()
+      {
         if (current->type && pos == 0)
         {
-            pos = 1;
-            return *this;
+          pos = 1;
+          return *this;
         }
 
-        // Если есть правое поддерево - идем туда
         if (current->right)
         {
-            current = current->right;
-            while (current->left)
-                current = current->left;
-            pos = 0;
-            return *this;
+          current = current->right;
+          while (current->left) current = current->left;
+          pos = 0;
+          return *this;
         }
 
-        // Идем вверх по родителям
         const node* p = current;
         while (p->parent)
         {
-            if (p->parent->left == p)
-            {
-                current = p->parent;
-                pos = 0;
-                return *this;
-            }
-            else if (p->parent->type && p->parent->middle == p)
-            {
-                current = p->parent;
-                pos = 1;
-                return *this;
-            }
-            p = p->parent;
+          if (p->parent->left == p)
+          {
+            current = p->parent;
+            pos = 0;
+            return *this;
+          }
+          else if (p->parent->type && p->parent->middle == p)
+          {
+            current = p->parent;
+            pos = 1;
+            return *this;
+          }
+          p = p->parent;
         }
 
-        // Достигли корня - конец обхода
         current = nullptr;
         pos = 0;
         return *this;
-    }
+      }
 
-    const_iterator operator++(int)
-    {
+      const_iterator operator++(int)
+      {
         const_iterator tmp = *this;
         ++(*this);
         return tmp;
-    }
+      }
 
-    bool operator==(const const_iterator& other) const
-    {
+      bool operator==(const const_iterator& other) const
+      {
         return current == other.current && pos == other.pos;
-    }
+      }
 
-    bool operator!=(const const_iterator& other) const
-    {
+      bool operator!=(const const_iterator& other) const
+      {
         return !(*this == other);
-    }
+      }
 
-private:
-    const node* current;
-    unsigned pos; // 0 - key1, 1 - key2
-    friend class map;
-};
+    private:
+      const node* current;
+      unsigned pos;
+      friend class map;
+    };
 
     const_iterator begin()
     {
@@ -338,5 +343,4 @@ private:
     size_t size_;
   };
 }
-
 #endif
