@@ -83,7 +83,7 @@ namespace asafov
       node* where = find_approximately(k);
       while (true)
       {
-        if (where->type) //3-нода
+        if (where->type)
         {
           if (where->parent)
           {
@@ -99,7 +99,7 @@ namespace asafov
             }
             where = where->parent;
           }
-          else //root-нода
+          else
           {
             if (Comparator(where->key1, k))
             {
@@ -122,7 +122,7 @@ namespace asafov
             root_ = temp;
           }
         }
-        else //2-нода
+        else
         {
           if (Comparator(where->key1, k))
           {
@@ -222,7 +222,7 @@ namespace asafov
 
       const std::pair<const Key, Value>* operator->() const
       {
-        if (pos == 0) 
+        if (pos == 0)
         {
           return reinterpret_cast<const std::pair<const Key, Value>*>(&current->key1);
         }
