@@ -191,16 +191,10 @@ namespace asafov
     void clear(node* there)
     {
       if (!there) return;
-      
-      // Clear children first
       if (there->left) clear(there->left);
       if (there->middle) clear(there->middle);
       if (there->right) clear(there->right);
-      
-      // Clear parent pointer
       there->parent = nullptr;
-      
-      // Delete the node
       delete there;
     }
 
@@ -233,7 +227,6 @@ namespace asafov
         }
       }
 
-      // Key not found, insert it
       Value v;
       insert(k, v);
       where = find_approximately(k);
