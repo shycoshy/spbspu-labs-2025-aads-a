@@ -188,13 +188,10 @@ namespace asafov
     void clear(node* there)
     {
       if (!there) return;
-      node* left = there->left;
-      node* middle = there->middle;
-      node* right = there->right;
-      if (left) clear(left);
-      if (middle) clear(middle);
-      if (right) clear(right);
-      delete there;
+      if (there->left) clear(there->left);
+      if (there->middle) clear(there->middle);
+      if (there->right) clear(there->right);
+      delete this;
     }
 
     Value& operator[](const Key& k)
