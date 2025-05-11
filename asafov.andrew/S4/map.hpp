@@ -22,11 +22,6 @@ namespace asafov
         type(false)
       {}
 
-      ~node()
-      {
-        clear(this->root_);
-      }
-
       Key key1, key2;
       Value val1, val2;
       node* left;
