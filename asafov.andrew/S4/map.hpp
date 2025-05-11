@@ -34,7 +34,42 @@ namespace asafov
     node* find_approximately(const Key& k)
     {
       node* where = root_;
-      while (where->left)
+      while (where && where->left)
+      {
+        if (where->type)
+        {
+          if (Comparator{}(where->key1, k))
+          {
+            where = where->left;
+          }
+          else if (Comparator{}(k, where->key2))
+          {
+            where = where->right;
+          }
+          else
+          {
+            where = where->middle;
+          }
+        }
+        else
+        {
+          if (Comparator{}(where->key1, k))
+          {
+            where = where->left;
+          }
+          else
+          {
+            where = where->right;
+          }
+        }
+      }
+      return where;
+    }
+
+    const node* find_approximately(const Key& k) const
+    {
+      const node* where = root_;
+      while (where && where->left)
       {
         if (where->type)
         {
@@ -152,7 +187,21 @@ namespace asafov
 
     Value& operator[](const Key& k)
     {
+      if (!root_)
+      {
+        root_ = new node(k, Value(), nullptr);
+        size_++;
+        return root_->val1;
+      }
+
       node* where = find_approximately(k);
+      if (!where)
+      {
+        root_ = new node(k, Value(), nullptr);
+        size_++;
+        return root_->val1;
+      }
+
       if (Comparator{}(where->key1, k) && Comparator{}(k, where->key1))
       {
         return where->val1;
@@ -164,7 +213,15 @@ namespace asafov
           return where->val2;
         }
       }
-      return Value();
+
+      // Key not found, insert it
+      insert(k, Value());
+      where = find_approximately(k);
+      if (Comparator{}(where->key1, k) && Comparator{}(k, where->key1))
+      {
+        return where->val1;
+      }
+      return where->val2;
     }
     Value& at(const Key& k)
     {
@@ -294,50 +351,42 @@ namespace asafov
       friend class map;
     };
 
-    const_iterator begin()
+    const_iterator begin() const
     {
       if (!root_) return end();
-      node* n = root_;
-      while (n->left) n = n->left;
-      return iterator(n);
-    }
-    const_iterator end()
-    {
-      return const_iterator(nullptr);
-    }
-    const_iterator cbegin()
-    {
-      if (!root_) return cend();
-      node* n = root_;
+      const node* n = root_;
       while (n->left) n = n->left;
       return const_iterator(n);
+    }
+    const_iterator end() const
+    {
+      return const_iterator(nullptr);
     }
     const_iterator cbegin() const
     {
-      if (!root_) return cend();
-      node* n = root_;
-      while (n->left) n = n->left;
-      return const_iterator(n);
-    }
-    const_iterator cend()
-    {
-      return const_iterator(nullptr);
+      return begin();
     }
     const_iterator cend() const
     {
-      return const_iterator(nullptr);
+      return end();
     }
 
     const_iterator find(const Key& k) const
     {
+      if (!root_) return end();
       const node* where = find_approximately(k);
-      if (where && !Comparator{}(where->key1, k) && !Comparator{}(k, where->key1))
+      if (!where) return end();
+
+      if (Comparator{}(where->key1, k) && Comparator{}(k, where->key1))
       {
-        return const_iterator(where, 0);
+        return const_iterator(where);
       }
-      else if (where && where->type && !Comparator{}(where->key2, k) && !Comparator{}(k, where->key2))
+      else if (where->type)
       {
-        return const_iterator(where, 1);
+        if (Comparator{}(where->key2, k) && Comparator{}(k, where->key2))
+        {
+          return const_iterator(where, 1);
+        }
       }
       return end();
     }
