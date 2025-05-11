@@ -22,12 +22,20 @@ namespace asafov
         type(false)
       {}
 
+      ~node()
+      {
+        left = nullptr;
+        middle = nullptr;
+        right = nullptr;
+        parent = nullptr;
+      }
+
       Key key1, key2;
       Value val1, val2;
       node* left;
       node* middle;
       node* right;
-      node*parent;
+      node* parent;
       bool type;
     };
 
@@ -182,10 +190,17 @@ namespace asafov
     }
     void clear(node* there)
     {
-      if (there == nullptr) return;
-      if (there->type) clear(there->middle);
-      clear(there->left);
-      clear(there->right);
+      if (!there) return;
+      
+      // Clear children first
+      if (there->left) clear(there->left);
+      if (there->middle) clear(there->middle);
+      if (there->right) clear(there->right);
+      
+      // Clear parent pointer
+      there->parent = nullptr;
+      
+      // Delete the node
       delete there;
     }
 
