@@ -24,10 +24,7 @@ namespace asafov
 
       ~node()
       {
-        left = nullptr;
-        middle = nullptr;
-        right = nullptr;
-        parent = nullptr;
+        clear(root_);
       }
 
       Key key1, key2;
@@ -191,10 +188,12 @@ namespace asafov
     void clear(node* there)
     {
       if (!there) return;
-      if (there->left) clear(there->left);
-      if (there->middle) clear(there->middle);
-      if (there->right) clear(there->right);
-      there->parent = nullptr;
+      node* left = there->left;
+      node* middle = there->middle;
+      node* right = there->right;
+      if (left) clear(left);
+      if (middle) clear(middle);
+      if (right) clear(right);
       delete there;
     }
 
