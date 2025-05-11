@@ -111,11 +111,12 @@ namespace asafov
       clear(root_);
     }
 
-    void insert(Key& k, Value& v)
+    void insert(const Key& k, const Value& v)
     {
       if (!root_)
       {
         root_ = new node(k, v, nullptr);
+        size_++;
         return;
       }
       node* where = find_approximately(k);
@@ -127,13 +128,13 @@ namespace asafov
           {
             if (Comparator{}(where->key1, k))
             {
-              std::swap(where->key1, k);
-              std::swap(where->val1, v);
+              where->key1 = k;
+              where->val1 = v;
             }
             else if (Comparator{}(k, where->key2))
             {
-              std::swap(where->key2, k);
-              std::swap(where->val2, v);
+              where->key2 = k;
+              where->val2 = v;
             }
             where = where->parent;
           }
@@ -141,13 +142,13 @@ namespace asafov
           {
             if (Comparator{}(where->key1, k))
             {
-              std::swap(where->key1, k);
-              std::swap(where->val1, v);
+              where->key1 = k;
+              where->val1 = v;
             }
             else if (Comparator{}(k, where->key2))
             {
-              std::swap(where->key2, k);
-              std::swap(where->val2, v);
+              where->key2 = k;
+              where->val2 = v;
             }
             node* temp = new node(k, v, nullptr);
             temp->left = new node(root_->key1, root_->val1, temp);
@@ -165,11 +166,14 @@ namespace asafov
           if (Comparator{}(where->key1, k))
           {
             where->key2 = where->key1;
+            where->val2 = where->val1;
             where->key1 = k;
+            where->val1 = v;
           }
           else
           {
             where->key2 = k;
+            where->val2 = v;
           }
           break;
         }
@@ -215,7 +219,8 @@ namespace asafov
       }
 
       // Key not found, insert it
-      insert(k, Value());
+      Value v;
+      insert(k, v);
       where = find_approximately(k);
       if (Comparator{}(where->key1, k) && Comparator{}(k, where->key1))
       {
