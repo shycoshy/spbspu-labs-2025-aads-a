@@ -24,7 +24,7 @@ namespace asafov
 
       ~node()
       {
-        clear(root_);
+        clear(this->root_);
       }
 
       Key key1, key2;
