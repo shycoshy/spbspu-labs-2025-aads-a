@@ -38,11 +38,11 @@ namespace asafov
       {
         if (where->type)
         {
-          if (Comparator(where->key1, k))
+          if (Comparator{}(where->key1, k))
           {
             where = where->left;
           }
-          else if (Comparator(k, where->key2))
+          else if (Comparator{}(k, where->key2))
           {
             where = where->right;
           }
@@ -53,13 +53,13 @@ namespace asafov
         }
         else
         {
-          if (Comparator(where->key1, k))
+          if (Comparator{}(where->key1, k))
           {
             where = where->left;
           }
           else
           {
-            where = where->rigth;
+            where = where->right;
           }
         }
       }
@@ -90,12 +90,12 @@ namespace asafov
         {
           if (where->parent)
           {
-            if (Comparator(where->key1, k))
+            if (Comparator{}(where->key1, k))
             {
               std::swap(where->key1, k);
               std::swap(where->val1, v);
             }
-            else if (Comparator(k, where->key2))
+            else if (Comparator{}(k, where->key2))
             {
               std::swap(where->key2, k);
               std::swap(where->val2, v);
@@ -104,12 +104,12 @@ namespace asafov
           }
           else
           {
-            if (Comparator(where->key1, k))
+            if (Comparator{}(where->key1, k))
             {
               std::swap(where->key1, k);
               std::swap(where->val1, v);
             }
-            else if (Comparator(k, where->key2))
+            else if (Comparator{}(k, where->key2))
             {
               std::swap(where->key2, k);
               std::swap(where->val2, v);
@@ -127,7 +127,7 @@ namespace asafov
         }
         else
         {
-          if (Comparator(where->key1, k))
+          if (Comparator{}(where->key1, k))
           {
             where->key2 = where->key1;
             where->key1 = k;
@@ -153,13 +153,13 @@ namespace asafov
     Value& operator[](const Key& k)
     {
       node* where = find_approximately(k);
-      if (Comparator(where->key1, k) && Comparator(k, where->key1))
+      if (Comparator{}(where->key1, k) && Comparator{}(k, where->key1))
       {
         return where->val1;
       }
       else if (where->type)
       {
-        if (Comparator(where->key2, k) && Comparator(k, where->key2))
+        if (Comparator{}(where->key2, k) && Comparator{}(k, where->key2))
         {
           return where->val2;
         }
@@ -331,11 +331,11 @@ namespace asafov
     const_iterator find(const Key& k) const
     {
       const node* where = find_approximately(k);
-      if (where && !Comparator(where->key1, k) && !Comparator(k, where->key1))
+      if (where && !Comparator{}(where->key1, k) && !Comparator{}(k, where->key1))
       {
         return const_iterator(where, 0);
       }
-      else if (where && where->type && !Comparator(where->key2, k) && !Comparator(k, where->key2))
+      else if (where && where->type && !Comparator{}(where->key2, k) && !Comparator{}(k, where->key2))
       {
         return const_iterator(where, 1);
       }
