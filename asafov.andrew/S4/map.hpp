@@ -78,7 +78,7 @@ namespace asafov
         new_root->left = new node(n->key1, n->val1, new_root);
         new_root->right = new node(n->key2, n->val2, new_root);
 
-        if (n->left) 
+        if (n->left)
         {
           new_root->left->left = n->left;
           n->left->parent = new_root->left;
