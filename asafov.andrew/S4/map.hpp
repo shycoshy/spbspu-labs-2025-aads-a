@@ -88,11 +88,6 @@ namespace asafov
           new_root->left->right = n->middle;
           n->middle->parent = new_root->left;
         }
-        if (n->middle && n->middle->right)
-        {
-          new_root->right->left = n->middle->right;
-          n->middle->right->parent = new_root->right;
-        }
         if (n->right)
         {
           new_root->right->right = n->right;
@@ -127,11 +122,6 @@ namespace asafov
               new_left->right = n->middle;
               n->middle->parent = new_left;
             }
-            if (n->middle && n->middle->right)
-            {
-              new_middle->left = n->middle->right;
-              n->middle->right->parent = new_middle;
-            }
             if (n->right)
             {
               new_middle->right = n->right;
@@ -157,11 +147,6 @@ namespace asafov
             {
               new_middle->right = n->middle;
               n->middle->parent = new_middle;
-            }
-            if (n->middle && n->middle->right)
-            {
-              new_right->left = n->middle->right;
-              n->middle->right->parent = new_right;
             }
             if (n->right)
             {
@@ -233,11 +218,6 @@ namespace asafov
               new_left->right = n->middle;
               n->middle->parent = new_left;
             }
-            if (n->middle && n->middle->right)
-            {
-              new_middle->left = n->middle->right;
-              n->middle->right->parent = new_middle;
-            }
             if (n->right)
             {
               new_middle->right = n->right;
@@ -265,11 +245,6 @@ namespace asafov
             {
               new_middle->right = n->middle;
               n->middle->parent = new_middle;
-            }
-            if (n->middle && n->middle->right)
-            {
-              new_right->left = n->middle->right;
-              n->middle->right->parent = new_right;
             }
             if (n->right)
             {
