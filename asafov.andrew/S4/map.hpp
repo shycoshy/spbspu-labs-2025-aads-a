@@ -70,19 +70,35 @@ namespace asafov
 
     void split(node* n)
     {
+      if (!n) return;
+
       if (!n->parent)
       {
         node* new_root = new node(n->key2, n->val2, nullptr);
         new_root->left = new node(n->key1, n->val1, new_root);
         new_root->right = new node(n->key2, n->val2, new_root);
-        new_root->left->left = n->left;
-        new_root->left->right = n->middle;
-        new_root->right->left = n->middle->right;
-        new_root->right->right = n->right;
-        if (new_root->left->left) new_root->left->left->parent = new_root->left;
-        if (new_root->left->right) new_root->left->right->parent = new_root->left;
-        if (new_root->right->left) new_root->right->left->parent = new_root->right;
-        if (new_root->right->right) new_root->right->right->parent = new_root->right;
+        
+        if (n->left) 
+        {
+          new_root->left->left = n->left;
+          n->left->parent = new_root->left;
+        }
+        if (n->middle)
+        {
+          new_root->left->right = n->middle;
+          n->middle->parent = new_root->left;
+        }
+        if (n->middle && n->middle->right)
+        {
+          new_root->right->left = n->middle->right;
+          n->middle->right->parent = new_root->right;
+        }
+        if (n->right)
+        {
+          new_root->right->right = n->right;
+          n->right->parent = new_root->right;
+        }
+        
         delete n;
         root_ = new_root;
       }
@@ -97,12 +113,31 @@ namespace asafov
             p->val2 = p->val1;
             p->key1 = n->key2;
             p->val1 = n->val2;
+            
             node* new_left = new node(n->key1, n->val1, p);
             node* new_middle = new node(n->key2, n->val2, p);
-            new_left->left = n->left;
-            new_left->right = n->middle;
-            new_middle->left = n->middle->right;
-            new_middle->right = n->right;
+            
+            if (n->left)
+            {
+              new_left->left = n->left;
+              n->left->parent = new_left;
+            }
+            if (n->middle)
+            {
+              new_left->right = n->middle;
+              n->middle->parent = new_left;
+            }
+            if (n->middle && n->middle->right)
+            {
+              new_middle->left = n->middle->right;
+              n->middle->right->parent = new_middle;
+            }
+            if (n->right)
+            {
+              new_middle->right = n->right;
+              n->right->parent = new_middle;
+            }
+            
             p->middle = new_middle;
             p->left = new_left;
           }
@@ -110,12 +145,31 @@ namespace asafov
           {
             p->key2 = n->key2;
             p->val2 = n->val2;
+            
             node* new_middle = new node(n->key1, n->val1, p);
             node* new_right = new node(n->key2, n->val2, p);
-            new_middle->left = n->left;
-            new_middle->right = n->middle;
-            new_right->left = n->middle->right;
-            new_right->right = n->right;
+            
+            if (n->left)
+            {
+              new_middle->left = n->left;
+              n->left->parent = new_middle;
+            }
+            if (n->middle)
+            {
+              new_middle->right = n->middle;
+              n->middle->parent = new_middle;
+            }
+            if (n->middle && n->middle->right)
+            {
+              new_right->left = n->middle->right;
+              n->middle->right->parent = new_right;
+            }
+            if (n->right)
+            {
+              new_right->right = n->right;
+              n->right->parent = new_right;
+            }
+            
             p->middle = new_middle;
             p->right = new_right;
           }
@@ -125,10 +179,28 @@ namespace asafov
             Value temp_val = n->val2;
             node* new_left = new node(p->key1, p->val1, p);
             node* new_right = new node(p->key2, p->val2, p);
-            new_left->left = p->left;
-            new_left->right = n->left;
-            new_right->left = n->right;
-            new_right->right = p->right;
+            
+            if (p->left)
+            {
+              new_left->left = p->left;
+              p->left->parent = new_left;
+            }
+            if (n->left)
+            {
+              new_left->right = n->left;
+              n->left->parent = new_left;
+            }
+            if (n->right)
+            {
+              new_right->left = n->right;
+              n->right->parent = new_right;
+            }
+            if (p->right)
+            {
+              new_right->right = p->right;
+              p->right->parent = new_right;
+            }
+            
             p->key1 = temp_key;
             p->val1 = temp_val;
             p->left = new_left;
@@ -148,12 +220,31 @@ namespace asafov
             p->key1 = n->key2;
             p->val1 = n->val2;
             p->type = true;
+            
             node* new_left = new node(n->key1, n->val1, p);
             node* new_middle = new node(n->key2, n->val2, p);
-            new_left->left = n->left;
-            new_left->right = n->middle;
-            new_middle->left = n->middle->right;
-            new_middle->right = n->right;
+            
+            if (n->left)
+            {
+              new_left->left = n->left;
+              n->left->parent = new_left;
+            }
+            if (n->middle)
+            {
+              new_left->right = n->middle;
+              n->middle->parent = new_left;
+            }
+            if (n->middle && n->middle->right)
+            {
+              new_middle->left = n->middle->right;
+              n->middle->right->parent = new_middle;
+            }
+            if (n->right)
+            {
+              new_middle->right = n->right;
+              n->right->parent = new_middle;
+            }
+            
             p->left = new_left;
             p->middle = new_middle;
           }
@@ -162,12 +253,31 @@ namespace asafov
             p->key2 = n->key2;
             p->val2 = n->val2;
             p->type = true;
+            
             node* new_middle = new node(n->key1, n->val1, p);
             node* new_right = new node(n->key2, n->val2, p);
-            new_middle->left = n->left;
-            new_middle->right = n->middle;
-            new_right->left = n->middle->right;
-            new_right->right = n->right;
+            
+            if (n->left)
+            {
+              new_middle->left = n->left;
+              n->left->parent = new_middle;
+            }
+            if (n->middle)
+            {
+              new_middle->right = n->middle;
+              n->middle->parent = new_middle;
+            }
+            if (n->middle && n->middle->right)
+            {
+              new_right->left = n->middle->right;
+              n->middle->right->parent = new_right;
+            }
+            if (n->right)
+            {
+              new_right->right = n->right;
+              n->right->parent = new_right;
+            }
+            
             p->middle = new_middle;
             p->right = new_right;
           }
@@ -243,6 +353,8 @@ namespace asafov
         return;
       }
       node* where = find_approximately(k);
+      if (!where) return;
+
       if (!Comparator{}(where->key1, k) && !Comparator{}(k, where->key1))
       {
         where->val1 = v;
@@ -321,12 +433,15 @@ namespace asafov
       Value v{};
       insert(k, v);
       where = find_approximately(k);
+      if (!where) throw std::runtime_error("Insertion failed");
+      
       if (!Comparator{}(where->key1, k) && !Comparator{}(k, where->key1))
       {
         return where->val1;
       }
       return where->val2;
     }
+
     Value& at(const Key& k)
     {
       node* where = find_approximately(k);
@@ -344,6 +459,7 @@ namespace asafov
       }
       throw std::out_of_range("key not found!");
     }
+
     const Value& at(const Key& k) const
     {
       const node* where = find_approximately(k);
@@ -386,6 +502,7 @@ namespace asafov
 
       const std::pair<const Key, Value> operator*() const
       {
+        if (!current) throw std::out_of_range("Dereferencing end iterator");
         if (pos == 0)
         {
           return std::make_pair(current->key1, current->val1);
@@ -395,6 +512,7 @@ namespace asafov
 
       const std::pair<const Key, Value>* operator->() const
       {
+        if (!current) throw std::out_of_range("Dereferencing end iterator");
         if (pos == 0)
         {
           return reinterpret_cast<const std::pair<const Key, Value>*>(&current->key1);
@@ -404,6 +522,8 @@ namespace asafov
 
       const_iterator& operator++()
       {
+        if (!current) return *this;
+        
         if (current->type && pos == 0)
         {
           pos = 1;
@@ -437,6 +557,7 @@ namespace asafov
         pos = 0;
         return *this;
       }
+
       const_iterator operator++(int)
       {
         const_iterator tmp = *this;
@@ -464,14 +585,17 @@ namespace asafov
       while (n->left) n = n->left;
       return const_iterator(n);
     }
+
     const_iterator end() const
     {
       return const_iterator(nullptr);
     }
+
     const_iterator cbegin() const
     {
       return begin();
     }
+
     const_iterator cend() const
     {
       return end();
@@ -491,6 +615,7 @@ namespace asafov
       }
       return end();
     }
+
   private:
     void clear(node* n) noexcept
     {
