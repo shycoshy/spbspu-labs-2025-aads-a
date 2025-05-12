@@ -1,9 +1,11 @@
 #ifndef MAP_HPP
 #define MAP_HPP
+
 #include <utility>
 #include <cstddef>
 #include <stdexcept>
 #include <functional>
+#include <initializer_list>
 
 namespace asafov
 {
@@ -31,18 +33,18 @@ namespace asafov
       bool type;
     };
 
-    node* find_approximately(const Key& k)
+    node* find_approximately(const Key& k) const
     {
       node* where = root_;
       while (where && where->left)
       {
         if (where->type)
         {
-          if (Comparator{}(where->key1, k))
+          if (Comparator{}(k, where->key1))
           {
             where = where->left;
           }
-          else if (Comparator{}(k, where->key2))
+          else if (Comparator{}(where->key2, k))
           {
             where = where->right;
           }
@@ -53,7 +55,7 @@ namespace asafov
         }
         else
         {
-          if (Comparator{}(where->key1, k))
+          if (Comparator{}(k, where->key1))
           {
             where = where->left;
           }
@@ -66,49 +68,190 @@ namespace asafov
       return where;
     }
 
-    const node* find_approximately(const Key& k) const
+    void split(node* n)
     {
-      const node* where = root_;
-      while (where && where->left)
+      if (!n->parent)
       {
-        if (where->type)
+        node* new_root = new node(n->key2, n->val2, nullptr);
+        new_root->left = new node(n->key1, n->val1, new_root);
+        new_root->right = new node(n->key2, n->val2, new_root);
+        
+        new_root->left->left = n->left;
+        new_root->left->right = n->middle;
+        new_root->right->left = n->middle->right;
+        new_root->right->right = n->right;
+        
+        if (new_root->left->left) new_root->left->left->parent = new_root->left;
+        if (new_root->left->right) new_root->left->right->parent = new_root->left;
+        if (new_root->right->left) new_root->right->left->parent = new_root->right;
+        if (new_root->right->right) new_root->right->right->parent = new_root->right;
+        
+        delete n;
+        root_ = new_root;
+      }
+      else
+      {
+        node* p = n->parent;
+        if (p->type)
         {
-          if (Comparator{}(where->key1, k))
+          if (p->left == n)
           {
-            where = where->left;
+            p->key2 = p->key1;
+            p->val2 = p->val1;
+            p->key1 = n->key2;
+            p->val1 = n->val2;
+            
+            node* new_left = new node(n->key1, n->val1, p);
+            node* new_middle = new node(n->key2, n->val2, p);
+            
+            new_left->left = n->left;
+            new_left->right = n->middle;
+            new_middle->left = n->middle->right;
+            new_middle->right = n->right;
+            
+            p->middle = new_middle;
+            p->left = new_left;
           }
-          else if (Comparator{}(k, where->key2))
+          else if (p->right == n)
           {
-            where = where->right;
+            p->key2 = n->key2;
+            p->val2 = n->val2;
+            
+            node* new_middle = new node(n->key1, n->val1, p);
+            node* new_right = new node(n->key2, n->val2, p);
+            
+            new_middle->left = n->left;
+            new_middle->right = n->middle;
+            new_right->left = n->middle->right;
+            new_right->right = n->right;
+            
+            p->middle = new_middle;
+            p->right = new_right;
           }
           else
           {
-            where = where->middle;
+            Key temp_key = n->key2;
+            Value temp_val = n->val2;
+            
+            node* new_left = new node(p->key1, p->val1, p);
+            node* new_right = new node(p->key2, p->val2, p);
+            
+            new_left->left = p->left;
+            new_left->right = n->left;
+            new_right->left = n->right;
+            new_right->right = p->right;
+            
+            p->key1 = temp_key;
+            p->val1 = temp_val;
+            p->left = new_left;
+            p->right = new_right;
+            p->middle = nullptr;
+            p->type = false;
           }
+          
+          delete n;
+          split(p);
         }
         else
         {
-          if (Comparator{}(where->key1, k))
+          if (p->left == n)
           {
-            where = where->left;
+            p->key2 = p->key1;
+            p->val2 = p->val1;
+            p->key1 = n->key2;
+            p->val1 = n->val2;
+            p->type = true;
+            
+            node* new_left = new node(n->key1, n->val1, p);
+            node* new_middle = new node(n->key2, n->val2, p);
+            
+            new_left->left = n->left;
+            new_left->right = n->middle;
+            new_middle->left = n->middle->right;
+            new_middle->right = n->right;
+            
+            p->left = new_left;
+            p->middle = new_middle;
           }
           else
           {
-            where = where->right;
+            p->key2 = n->key2;
+            p->val2 = n->val2;
+            p->type = true;
+            
+            node* new_middle = new node(n->key1, n->val1, p);
+            node* new_right = new node(n->key2, n->val2, p);
+            
+            new_middle->left = n->left;
+            new_middle->right = n->middle;
+            new_right->left = n->middle->right;
+            new_right->right = n->right;
+            
+            p->middle = new_middle;
+            p->right = new_right;
           }
+          
+          delete n;
         }
       }
-      return where;
     }
+
   public:
     map() noexcept:
       root_(nullptr),
       size_(0)
     {}
-
+    map(std::initializer_list<std::pair<const Key, Value>> init):
+      map()
+    {
+      for (const auto& p : init)
+      {
+        insert(p.first, p.second);
+      }
+    }
+    map(const map& other):
+      map()
+    {
+      for (const auto& p : other)
+      {
+        insert(p.first, p.second);
+      }
+    }
+    map(map&& other) noexcept:
+      root_(other.root_),
+      size_(other.size_)
+    {
+      other.root_ = nullptr;
+      other.size_ = 0;
+    }
     ~map()
     {
-      clear(root_);
+      clear();
+    }
+
+    map& operator=(const map& other)
+    {
+      if (this != &other)
+      {
+        clear();
+        for (const auto& p : other)
+        {
+          insert(p.first, p.second);
+        }
+      }
+      return *this;
+    }
+    map& operator=(map&& other) noexcept
+    {
+      if (this != &other)
+      {
+        clear();
+        root_ = other.root_;
+        size_ = other.size_;
+        other.root_ = nullptr;
+        other.size_ = 0;
+      }
+      return *this;
     }
 
     void insert(const Key& k, const Value& v)
@@ -120,108 +263,85 @@ namespace asafov
         return;
       }
       node* where = find_approximately(k);
-      while (true)
+      if (!Comparator{}(where->key1, k) && !Comparator{}(k, where->key1))
       {
-        if (where->type)
+        where->val1 = v;
+        return;
+      }
+      if (where->type && !Comparator{}(where->key2, k) && !Comparator{}(k, where->key2))
+      {
+        where->val2 = v;
+        return;
+      }
+      if (where->type)
+      {
+        if (Comparator{}(k, where->key1))
         {
-          if (where->parent)
-          {
-            if (Comparator{}(where->key1, k))
-            {
-              where->key1 = k;
-              where->val1 = v;
-            }
-            else if (Comparator{}(k, where->key2))
-            {
-              where->key2 = k;
-              where->val2 = v;
-            }
-            where = where->parent;
-          }
-          else
-          {
-            if (Comparator{}(where->key1, k))
-            {
-              where->key1 = k;
-              where->val1 = v;
-            }
-            else if (Comparator{}(k, where->key2))
-            {
-              where->key2 = k;
-              where->val2 = v;
-            }
-            node* temp = new node(k, v, nullptr);
-            temp->left = new node(root_->key1, root_->val1, temp);
-            temp->right = new node(root_->key2, root_->val2, temp);
-            temp->left->left = root_->left;
-            temp->right->right = root_->right;
-            temp->left->right = root_->middle->left;
-            temp->right->left = root_->middle->right;
-            delete root_;
-            root_ = temp;
-          }
+          where->key2 = where->key1;
+          where->val2 = where->val1;
+          where->key1 = k;
+          where->val1 = v;
+        }
+        else if (Comparator{}(where->key2, k))
+        {
+          where->key2 = k;
+          where->val2 = v;
         }
         else
         {
-          if (Comparator{}(where->key1, k))
-          {
-            where->key2 = where->key1;
-            where->val2 = where->val1;
-            where->key1 = k;
-            where->val1 = v;
-          }
-          else
-          {
-            where->key2 = k;
-            where->val2 = v;
-          }
-          break;
+          Key temp_key = where->key1;
+          Value temp_val = where->val1;
+          where->key1 = k;
+          where->val1 = v;
+          where->key2 = temp_key;
+          where->val2 = temp_val;
         }
+        split(where);
+      }
+      else
+      {
+        if (Comparator{}(k, where->key1))
+        {
+          where->key2 = where->key1;
+          where->val2 = where->val1;
+          where->key1 = k;
+          where->val1 = v;
+        }
+        else
+        {
+          where->key2 = k;
+          where->val2 = v;
+        }
+        where->type = true;
       }
       size_++;
     }
-    void clear(node* there)
+
+    void clear() noexcept
     {
-      if (!there) return;
-      clear(there->left);
-      clear(there->middle);
-      clear(there->right);
-      delete there;
+      clear(root_);
+      root_ = nullptr;
+      size_ = 0;
     }
 
     Value& operator[](const Key& k)
     {
-      if (!root_)
-      {
-        root_ = new node(k, Value(), nullptr);
-        size_++;
-        return root_->val1;
-      }
-
       node* where = find_approximately(k);
-      if (!where)
+      if (where)
       {
-        root_ = new node(k, Value(), nullptr);
-        size_++;
-        return root_->val1;
-      }
-
-      if (Comparator{}(where->key1, k) && Comparator{}(k, where->key1))
-      {
-        return where->val1;
-      }
-      else if (where->type)
-      {
-        if (Comparator{}(where->key2, k) && Comparator{}(k, where->key2))
+        if (!Comparator{}(where->key1, k) && !Comparator{}(k, where->key1))
+        {
+          return where->val1;
+        }
+        if (where->type && !Comparator{}(where->key2, k) && !Comparator{}(k, where->key2))
         {
           return where->val2;
         }
       }
-
-      Value v;
+      Value v{};
       insert(k, v);
       where = find_approximately(k);
-      if (Comparator{}(where->key1, k) && Comparator{}(k, where->key1))
+      if (!Comparator{}(where->key1, k) && !Comparator{}(k, where->key1))
       {
         return where->val1;
       }
@@ -229,39 +349,51 @@ namespace asafov
     }
     Value& at(const Key& k)
     {
-      Value& temp = operator[](k);
-      if (temp != Value())
+      node* where = find_approximately(k);
+      if (!where)
       {
         throw std::out_of_range("key not found!");
       }
-      return temp;
+      if (!Comparator{}(where->key1, k) && !Comparator{}(k, where->key1))
+      {
+        return where->val1;
+      }
+      if (where->type && !Comparator{}(where->key2, k) && !Comparator{}(k, where->key2))
+      {
+        return where->val2;
+      }
+      throw std::out_of_range("key not found!");
     }
     const Value& at(const Key& k) const
     {
-      Value& temp = operator[](k);
-      if (temp != Value())
+      const node* where = find_approximately(k);
+      if (!where)
       {
         throw std::out_of_range("key not found!");
       }
-      return temp;
+      if (!Comparator{}(where->key1, k) && !Comparator{}(k, where->key1))
+      {
+        return where->val1;
+      }
+      if (where->type && !Comparator{}(where->key2, k) && !Comparator{}(k, where->key2))
+      {
+        return where->val2;
+      }
+      throw std::out_of_range("key not found!");
     }
 
     void swap(map& other) noexcept
     {
-      std::swap(root_, other->root_);
-      std::swap(size_, other->size_);
+      std::swap(root_, other.root_);
+      std::swap(size_, other.size_);
     }
-    size_t size() const noexcept
-    {
-      return size_;
-    }
-    bool empty() const noexcept
-    {
-      return size_ == 0;
-    }
+
+    size_t size() const noexcept { return size_; }
+    bool empty() const noexcept { return size_ == 0; }
 
     class const_iterator
     {
+      friend class map;
     public:
       const_iterator():
         current(nullptr),
@@ -272,16 +404,13 @@ namespace asafov
         pos(p)
       {}
 
-      const std::pair<const Key, Value>& operator*() const
+      const std::pair<const Key, Value> operator*() const
       {
         if (pos == 0)
         {
-          return *reinterpret_cast<const std::pair<const Key, Value>*>(&current->key1);
+          return std::make_pair(current->key1, current->val1);
         }
-        else
-        {
-          return *reinterpret_cast<const std::pair<const Key, Value>*>(&current->key2);
-        }
+        return std::make_pair(current->key2, current->val2);
       }
 
       const std::pair<const Key, Value>* operator->() const
@@ -300,7 +429,6 @@ namespace asafov
           pos = 1;
           return *this;
         }
-
         if (current->right)
         {
           current = current->right;
@@ -308,7 +436,6 @@ namespace asafov
           pos = 0;
           return *this;
         }
-
         const node* p = current;
         while (p->parent)
         {
@@ -326,12 +453,10 @@ namespace asafov
           }
           p = p->parent;
         }
-
         current = nullptr;
         pos = 0;
         return *this;
       }
-
       const_iterator operator++(int)
       {
         const_iterator tmp = *this;
@@ -343,16 +468,13 @@ namespace asafov
       {
         return current == other.current && pos == other.pos;
       }
-
       bool operator!=(const const_iterator& other) const
       {
         return !(*this == other);
       }
-
     private:
       const node* current;
       unsigned pos;
-      friend class map;
     };
 
     const_iterator begin() const
@@ -377,24 +499,28 @@ namespace asafov
 
     const_iterator find(const Key& k) const
     {
-      if (!root_) return end();
       const node* where = find_approximately(k);
       if (!where) return end();
-
-      if (Comparator{}(where->key1, k) && Comparator{}(k, where->key1))
+      if (!Comparator{}(where->key1, k) && !Comparator{}(k, where->key1))
       {
         return const_iterator(where);
       }
-      else if (where->type)
+      if (where->type && !Comparator{}(where->key2, k) && !Comparator{}(k, where->key2))
       {
-        if (Comparator{}(where->key2, k) && Comparator{}(k, where->key2))
-        {
-          return const_iterator(where, 1);
-        }
+        return const_iterator(where, 1);
       }
       return end();
     }
   private:
+    void clear(node* n) noexcept
+    {
+      if (!n) return;
+      clear(n->left);
+      clear(n->middle);
+      clear(n->right);
+      delete n;
+    }
+
     node* root_;
     size_t size_;
   };
