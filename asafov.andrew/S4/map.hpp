@@ -1,533 +1,342 @@
 #ifndef MAP_HPP
 #define MAP_HPP
-
-#include <iostream>
 #include <utility>
+#include <cstddef>
 #include <stdexcept>
+#include <functional>
+#include <stack>
 
 namespace asafov
 {
-  template< typename Key, typename Value >
+  template< class Key, class Value, class Comparator = std::less< Key > >
   class map
   {
-  private:
-    struct Node
+    struct node
     {
-      bool isLeaf;
-
-      union
+      node(Key k, Value v, node* p):
+        pair1(k, v),
+        left(nullptr),
+        middle(nullptr),
+        right(nullptr),
+        parent(p),
+        type(false)
       {
-        struct
-        {
-          std::pair< Key, Value > pairs[2];
-          Node* children[3];
-          int pairCount;
-        } inner;
-
-        std::pair< Key, Value > leafPair;
-      };
-
-      Node() : isLeaf(false)
-      {
-        inner.pairCount = 0;
-        inner.children[0] = inner.children[1] = inner.children[2] = nullptr;
       }
 
-      explicit Node(const Key& k, const Value& v) : isLeaf(true)
-      {
-        leafPair = std::make_pair(k, v);
-      }
-
-      ~Node()
-      {
-        if (!isLeaf)
-        {
-          for (int i = 0; i <= inner.pairCount; ++i)
-          {
-            delete inner.children[i];
-          }
-        }
-      }
+      std::pair< Key, Value > pair1, pair2;
+      node *left, *middle, *right, *parent;
+      bool type;
     };
 
-    Node* root;
-    size_t size_;
-
-    // Helper functions
-    bool isFull(const Node* node) const
+    node* find_approximately(const Key& k) const
     {
-      if (!node) return false;
-      return node->isLeaf ? true : (node->inner.pairCount == 2);
-    }
-
-    void insertIntoNode(Node* node, const std::pair< Key, Value >& pair, Node* leftChild = nullptr,
-                        Node* rightChild = nullptr)
-    {
-      if (node->isLeaf) return;
-
-      int pos = 0;
-      while (pos < node->inner.pairCount && pair.first > node->inner.pairs[pos].first)
+      node* where = root_;
+      while (where && where->left)
       {
-        pos++;
-      }
-
-      // Shift pairs and children to make space
-      for (int i = node->inner.pairCount; i > pos; --i)
-      {
-        node->inner.pairs[i] = node->inner.pairs[i - 1];
-      }
-      for (int i = node->inner.pairCount + 1; i > pos + 1; --i)
-      {
-        node->inner.children[i] = node->inner.children[i - 1];
-      }
-
-      node->inner.pairs[pos] = pair;
-      if (leftChild) node->inner.children[pos] = leftChild;
-      if (rightChild) node->inner.children[pos + 1] = rightChild;
-      node->inner.pairCount++;
-    }
-
-    Node* splitNode(Node* node, std::pair< Key, Value >& promotedPair, Node*& promotedLeft, Node*& promotedRight)
-    {
-      promotedPair = node->inner.pairs[1];
-
-      // Create new node for the right part
-      Node* newNode = new Node();
-      newNode->inner.pairCount = 1;
-      newNode->inner.pairs[0] = node->inner.pairs[2];
-      newNode->inner.children[0] = node->inner.children[2];
-      newNode->inner.children[1] = node->inner.children[3];
-
-      // Reset the original node
-      node->inner.pairCount = 1;
-      node->inner.children[2] = nullptr;
-
-      promotedLeft = node;
-      promotedRight = newNode;
-
-      return newNode;
-    }
-
-    Node* insert(Node* node, const std::pair< Key, Value >& pair, bool& inserted,
-                 std::pair< Key, Value >& promotedPair, Node*& promotedLeft, Node*& promotedRight)
-    {
-      if (node->isLeaf)
-      {
-        if (node->leafPair.first == pair.first)
+        if (where->type)
         {
-          // Key exists, update value
-          node->leafPair.second = pair.second;
-          inserted = false;
-          return nullptr;
-        }
-
-        // Need to split this leaf and promote
-        if (pair.first < node->leafPair.first)
-        {
-          promotedPair = pair;
-          promotedLeft = new Node(pair.first, pair.second);
-          promotedRight = node;
-        }
-        else
-        {
-          promotedPair = node->leafPair;
-          promotedLeft = node;
-          promotedRight = new Node(pair.first, pair.second);
-        }
-        inserted = true;
-        return nullptr;
-      }
-
-      // Find appropriate child
-      int childPos = 0;
-      while (childPos < node->inner.pairCount && pair.first > node->inner.pairs[childPos].first)
-      {
-        childPos++;
-      }
-
-      // Check if key exists in this node
-      if (childPos < node->inner.pairCount && pair.first == node->inner.pairs[childPos].first)
-      {
-        node->inner.pairs[childPos].second = pair.second;
-        inserted = false;
-        return nullptr;
-      }
-
-      Node* child = node->inner.children[childPos];
-      std::pair< Key, Value > newPromotedPair;
-      Node* newLeft = nullptr;
-      Node* newRight = nullptr;
-      bool childInserted = true;
-
-      Node* result = insert(child, pair, childInserted, newPromotedPair, newLeft, newRight);
-      (void)result; // Avoid unused variable warning
-
-      if (!childInserted)
-      {
-        inserted = false;
-        return nullptr;
-      }
-
-      if (newLeft)
-      {
-        // Child was split, need to promote
-        if (!isFull(node))
-        {
-          insertIntoNode(node, newPromotedPair, newLeft, newRight);
-          inserted = true;
-          return nullptr;
-        }
-        else
-        {
-          // Current node is full, need to split
-          Node* newNode = splitNode(node, promotedPair, promotedLeft, promotedRight);
-
-          // Determine where to put the promoted pair from child
-          if (newPromotedPair.first < promotedPair.first)
+          if (Comparator(k, where->pair1.first))
           {
-            insertIntoNode(promotedLeft, newPromotedPair, newLeft, newRight);
+            where = where->left;
+          }
+          else if (Comparator(where->pair2.first, k))
+          {
+            where = where->right;
           }
           else
           {
-            insertIntoNode(promotedRight, newPromotedPair, newLeft, newRight);
+            where = where->middle;
           }
-
-          return newNode;
         }
-      }
-
-      inserted = true;
-      return nullptr;
-    }
-
-    const Node* findNode(const Node* node, const Key& key) const
-    {
-      if (!node) return nullptr;
-
-      if (node->isLeaf)
-      {
-        return (node->leafPair.first == key) ? node : nullptr;
-      }
-
-      for (int i = 0; i < node->inner.pairCount; ++i)
-      {
-        if (key == node->inner.pairs[i].first)
+        else
         {
-          return node;
-        }
-        if (key < node->inner.pairs[i].first)
-        {
-          return findNode(node->inner.children[i], key);
+          if (Comparator(k, where->pair1.first))
+          {
+            where = where->left;
+          }
+          else
+          {
+            where = where->right;
+          }
         }
       }
-
-      return findNode(node->inner.children[node->inner.pairCount], key);
+      return where;
     }
 
   public:
-    // Forward declarations
-    class iterator;
-    class const_iterator;
-
-    map() : root(nullptr), size_(0)
+    map() noexcept:
+      root_(nullptr),
+      size_(0)
     {
     }
 
-    ~map()
+    void insert(const Key& k, const Value& v)
     {
-      delete root;
-    }
-
-    Value& operator[](const Key& key)
-    {
-      bool inserted;
-      std::pair< Key, Value > promotedPair;
-      Node* promotedLeft = nullptr;
-      Node* promotedRight = nullptr;
-
-      if (!root)
+      if (!root_)
       {
-        root = new Node(key, Value());
+        root_ = new node(k, v, nullptr);
         size_++;
-        return root->leafPair.second;
+        return;
       }
-
-      Node* newRoot = insert(root, std::make_pair(key, Value()), inserted, promotedPair, promotedLeft, promotedRight);
-      (void)newRoot; // Avoid unused variable warning
-
-      if (promotedLeft)
+      node* where = find_approximately(k);
+      while (true)
       {
-        Node* oldRoot = root;
-        (void)oldRoot; // Avoid unused variable warning
-        root = new Node();
-        root->inner.pairCount = 1;
-        root->inner.pairs[0] = promotedPair;
-        root->inner.children[0] = promotedLeft;
-        root->inner.children[1] = promotedRight;
+        if (where->type) //3-node
+        {
+          if (where->parent)
+          {
+            if (Comparator(k, where->pair1.first))
+            {
+              std::swap(where->pair1.first, k);
+              std::swap(where->pair1.second, v);
+            }
+            else if (Comparator(where->pair2.first, k))
+            {
+              std::swap(where->pair2.first, k);
+              std::swap(where->pair2.second, v);
+            }
+            where = where->parent;
+          }
+          else //root-node
+          {
+            if (Comparator(k, where->pair1.first))
+            {
+              std::swap(where->pair1.first, k);
+              std::swap(where->pair1.second, v);
+            }
+            else if (Comparator(where->pair2.first, k))
+            {
+              std::swap(where->pair2.first, k);
+              std::swap(where->pair2.second, v);
+            }
+            node* temp = new node(k, v, nullptr);
+            temp->left = new node(where->pair1.first, where->pair1.second, temp);
+            temp->right = new node(where->pair2.first, where->pair2.second, temp);
+            temp->left->left = where->left;
+            temp->right->right = where->right;
+            if (where->left) where->left->parent = temp->left;
+            if (where->right) where->right->parent = temp->right;
+            temp->left->right = where->middle;
+            if (where->middle) where->middle->parent = temp->left;
+            delete where;
+            root_ = temp;
+            size_++;
+            return;
+          }
+        }
+        else //2-node
+        {
+          if (Comparator(k, where->pair1.first))
+          {
+            where->pair2 = where->pair1;
+            where->pair1 = std::make_pair(k, v);
+          }
+          else
+          {
+            where->pair2 = std::make_pair(k, v);
+          }
+          where->type = true;
+          size_++;
+          return;
+        }
       }
-
-      if (inserted)
-      {
-        size_++;
-      }
-
-      const Node* found = findNode(root, key);
-      if (!found)
-      {
-        throw std::runtime_error("Key not found after insertion");
-      }
-      return const_cast< Node* >(found)->isLeaf
-               ? const_cast< Node* >(found)->leafPair.second
-               : const_cast< Node* >(found)->inner.pairs[0].second;
     }
 
-    const Value& at(const Key& key) const
+    void clear(node* there)
     {
-      const Node* node = findNode(root, key);
-      if (!node)
-      {
-        throw std::out_of_range("Key not found");
-      }
-      return node->isLeaf ? node->leafPair.second : node->inner.pairs[0].second;
-    }
-
-    size_t size() const
-    {
-      return size_;
-    }
-
-    bool empty() const
-    {
-      return size_ == 0;
+      if (there == nullptr) return;
+      if (there->type) clear(there->middle);
+      clear(there->left);
+      clear(there->right);
+      delete there;
     }
 
     void clear()
     {
-      delete root;
-      root = nullptr;
+      clear(root_);
+      root_ = nullptr;
       size_ = 0;
+    }
+
+    Value& operator[](const Key& k)
+    {
+      node* where = find_approximately(k);
+      if (!Comparator(where->pair1.first, k) && !Comparator(k, where->pair1.first))
+      {
+        return where->pair1.second;
+      }
+      else if (where->type)
+      {
+        if (!Comparator(where->pair2.first, k) && !Comparator(k, where->pair2.first))
+        {
+          return where->pair2.second;
+        }
+      }
+      insert(k, Value());
+      return operator[](k);
+    }
+
+    Value& at(const Key& k)
+    {
+      node* where = find_approximately(k);
+      if (!where) throw std::out_of_range("key not found!");
+      if (!Comparator(where->pair1.first, k) && !Comparator(k, where->pair1.first))
+      {
+        return where->pair1.second;
+      }
+      else if (where->type)
+      {
+        if (!Comparator(where->pair2.first, k) && !Comparator(k, where->pair2.first))
+        {
+          return where->pair2.second;
+        }
+      }
+      throw std::out_of_range("key not found!");
+    }
+
+    const Value& at(const Key& k) const
+    {
+      node* where = find_approximately(k);
+      if (!where) throw std::out_of_range("key not found!");
+      if (!Comparator(where->pair1.first, k) && !Comparator(k, where->pair1.first))
+      {
+        return where->pair1.second;
+      }
+      else if (where->type)
+      {
+        if (!Comparator(where->pair2.first, k) && !Comparator(k, where->pair2.first))
+        {
+          return where->pair2.second;
+        }
+      }
+      throw std::out_of_range("key not found!");
+    }
+
+    void swap(map& other) noexcept
+    {
+      std::swap(root_, other.root_);
+      std::swap(size_, other.size_);
+    }
+
+    size_t size() const noexcept
+    {
+      return size_;
+    }
+
+    bool empty() const noexcept
+    {
+      return size_ == 0;
     }
 
     class iterator
     {
-    private:
-      Node* current;
-      Node* parent;
-      int index;
-      bool atLeaf;
-
     public:
-      iterator(Node* node = nullptr, Node* p = nullptr, int i = 0, bool leaf = false)
-        : current(node), parent(p), index(i), atLeaf(leaf)
+      iterator():
+        current_node(nullptr),
+        current_pair(0)
       {
       }
 
-      std::pair< const Key, Value& > operator*()
+      iterator(node* n, int pair = 0):
+        current_node(n),
+        current_pair(pair)
       {
-        if (!current && !parent)
-        {
-          throw std::runtime_error("Dereferencing end iterator");
-        }
-        if (atLeaf)
-        {
-          return {current->leafPair.first, current->leafPair.second};
-        }
-        else if (parent)
-        {
-          return {parent->inner.pairs[index].first, parent->inner.pairs[index].second};
-        }
-        throw std::runtime_error("Invalid iterator state");
+      }
+
+      std::pair< const Key, Value >& operator*()
+      {
+        if (current_pair == 0)
+          return reinterpret_cast< std::pair< const Key, Value >& >(current_node->pair1);
+        else
+          return reinterpret_cast< std::pair< const Key, Value >& >(current_node->pair2);
+      }
+
+      std::pair< const Key, Value >* operator->()
+      {
+        return &(operator*());
       }
 
       iterator& operator++()
       {
-        if (!current && !parent) return *this;
+        if (!current_node) return *this;
 
-        if (atLeaf)
+        if (current_node->type && current_pair == 0)
         {
-          atLeaf = false;
-          if (!parent)
-          {
-            current = nullptr;
-            return *this;
-          }
-          // Move to parent's next element
-          index++;
-          if (index < parent->inner.pairCount)
-          {
-            return *this;
-          }
-          // Need to move up
-          current = parent;
-          parent = nullptr;
-          index = 0;
+          current_pair = 1;
           return *this;
         }
 
-        if (current)
+        // Find next node
+        std::stack< node* > nodes;
+        node* p = current_node;
+        while (p->parent)
         {
-          // Move to first child
-          if (!current->isLeaf && current->inner.pairCount > 0)
+          if (p->parent->left == p)
           {
-            parent = current;
-            current = current->inner.children[0];
-            while (current && !current->isLeaf)
-            {
-              parent = current;
-              current = current->inner.children[0];
-            }
-            atLeaf = (current != nullptr);
+            nodes.push(p->parent);
+            if (p->parent->type)
+              nodes.push(p->parent->middle);
+            p = p->parent;
+            break;
           }
-        }
-        else if (parent)
-        {
-          index++;
-          if (index < parent->inner.pairCount)
+          else if (p->parent->middle == p && p->parent->type)
           {
-            return *this;
+            nodes.push(p->parent);
+            p = p->parent;
+            break;
           }
-          // Need to move up
-          current = parent;
-          parent = nullptr;
-          index = 0;
+          p = p->parent;
         }
 
+        while (!nodes.empty())
+        {
+          p = nodes.top();
+          nodes.pop();
+          if (p->left)
+          {
+            current_node = p;
+            current_pair = 0;
+            return *this;
+          }
+        }
+
+        // If we get here, we're at the end
+        current_node = nullptr;
+        current_pair = 0;
         return *this;
+      }
+
+      iterator operator++(int)
+      {
+        iterator temp = *this;
+        ++(*this);
+        return temp;
       }
 
       bool operator==(const iterator& other) const
       {
-        return current == other.current &&
-          parent == other.parent &&
-          index == other.index &&
-          atLeaf == other.atLeaf;
+        return current_node == other.current_node && current_pair == other.current_pair;
       }
 
       bool operator!=(const iterator& other) const
       {
         return !(*this == other);
       }
-    };
 
-    class const_iterator
-    {
     private:
-      const Node* current;
-      const Node* parent;
-      int index;
-      bool atLeaf;
-
-    public:
-      const_iterator(const Node* node = nullptr, const Node* p = nullptr, int i = 0, bool leaf = false)
-        : current(node), parent(p), index(i), atLeaf(leaf)
-      {
-      }
-
-      const_iterator(const iterator& it)
-        : current(it.current), parent(it.parent), index(it.index), atLeaf(it.atLeaf)
-      {
-      }
-
-      std::pair< const Key, const Value& > operator*() const
-      {
-        if (!current && !parent)
-        {
-          throw std::runtime_error("Dereferencing end iterator");
-        }
-        if (atLeaf)
-        {
-          return {current->leafPair.first, current->leafPair.second};
-        }
-        else if (parent)
-        {
-          return {parent->inner.pairs[index].first, parent->inner.pairs[index].second};
-        }
-        throw std::runtime_error("Invalid iterator state");
-      }
-
-      const_iterator& operator++()
-      {
-        if (!current && !parent) return *this;
-
-        if (atLeaf)
-        {
-          atLeaf = false;
-          if (!parent)
-          {
-            current = nullptr;
-            return *this;
-          }
-          // Move to parent's next element
-          index++;
-          if (index < parent->inner.pairCount)
-          {
-            return *this;
-          }
-          // Need to move up
-          current = parent;
-          parent = nullptr;
-          index = 0;
-          return *this;
-        }
-
-        if (current)
-        {
-          // Move to first child
-          if (!current->isLeaf && current->inner.pairCount > 0)
-          {
-            parent = current;
-            current = current->inner.children[0];
-            while (current && !current->isLeaf)
-            {
-              parent = current;
-              current = current->inner.children[0];
-            }
-            atLeaf = (current != nullptr);
-          }
-        }
-        else if (parent)
-        {
-          index++;
-          if (index < parent->inner.pairCount)
-          {
-            return *this;
-          }
-          // Need to move up
-          current = parent;
-          parent = nullptr;
-          index = 0;
-        }
-
-        return *this;
-      }
-
-      bool operator==(const const_iterator& other) const
-      {
-        return current == other.current &&
-          parent == other.parent &&
-          index == other.index &&
-          atLeaf == other.atLeaf;
-      }
-
-      bool operator!=(const const_iterator& other) const
-      {
-        return !(*this == other);
-      }
+      node* current_node;
+      int current_pair; // 0 for pair1, 1 for pair2
+      friend class map;
     };
 
     iterator begin()
     {
-      Node* node = root;
-      Node* parent = nullptr;
-      int index = 0;
+      if (!root_) return end();
 
-      while (node && !node->isLeaf)
-      {
-        parent = node;
-        node = node->inner.children[0];
-      }
-
-      return iterator(node, parent, index, node != nullptr);
+      node* n = root_;
+      while (n->left)
+        n = n->left;
+      return iterator(n, 0);
     }
 
     iterator end()
@@ -535,116 +344,183 @@ namespace asafov
       return iterator(nullptr);
     }
 
-    const_iterator begin() const
+    class const_iterator
     {
-      const Node* node = root;
-      const Node* parent = nullptr;
-      int index = 0;
-
-      while (node && !node->isLeaf)
+    public:
+      const_iterator():
+        current_node(nullptr),
+        current_pair(0)
       {
-        parent = node;
-        node = node->inner.children[0];
       }
 
-      return const_iterator(node, parent, index, node != nullptr);
+      const_iterator(node* n, int pair = 0):
+        current_node(n),
+        current_pair(pair)
+      {
+      }
+
+      const_iterator(iterator it):
+        current_node(it.current_node),
+        current_pair(it.current_pair)
+      {
+      }
+
+      const std::pair< const Key, Value >& operator*() const
+      {
+        if (current_pair == 0)
+          return reinterpret_cast< const std::pair< const Key, Value >& >(current_node->pair1);
+        else
+          return reinterpret_cast< const std::pair< const Key, Value >& >(current_node->pair2);
+      }
+
+      const std::pair< const Key, Value >* operator->() const
+      {
+        return &(operator*());
+      }
+
+      const_iterator& operator++()
+      {
+        if (!current_node) return *this;
+
+        if (current_node->type && current_pair == 0)
+        {
+          current_pair = 1;
+          return *this;
+        }
+
+        // Find next node
+        std::stack< node* > nodes;
+        node* p = current_node;
+        while (p->parent)
+        {
+          if (p->parent->left == p)
+          {
+            nodes.push(p->parent);
+            if (p->parent->type)
+              nodes.push(p->parent->middle);
+            p = p->parent;
+            break;
+          }
+          else if (p->parent->middle == p && p->parent->type)
+          {
+            nodes.push(p->parent);
+            p = p->parent;
+            break;
+          }
+          p = p->parent;
+        }
+
+        while (!nodes.empty())
+        {
+          p = nodes.top();
+          nodes.pop();
+          if (p->left)
+          {
+            current_node = p;
+            current_pair = 0;
+            return *this;
+          }
+        }
+
+        // If we get here, we're at the end
+        current_node = nullptr;
+        current_pair = 0;
+        return *this;
+      }
+
+      const_iterator operator++(int)
+      {
+        const_iterator temp = *this;
+        ++(*this);
+        return temp;
+      }
+
+      bool operator==(const const_iterator& other) const
+      {
+        return current_node == other.current_node && current_pair == other.current_pair;
+      }
+
+      bool operator!=(const const_iterator& other) const
+      {
+        return !(*this == other);
+      }
+
+    private:
+      const node* current_node;
+      int current_pair; // 0 for pair1, 1 for pair2
+      friend class map;
+    };
+
+    const_iterator cbegin() const
+    {
+      if (!root_) return cend();
+
+      node* n = root_;
+      while (n->left)
+        n = n->left;
+      return const_iterator(n, 0);
     }
 
-    const_iterator end() const
+    const_iterator cend() const
     {
       return const_iterator(nullptr);
     }
 
-    iterator find(const Key& key)
+    const_iterator begin() const
     {
-      Node* node = root;
-      Node* parent = nullptr;
-      int index = 0;
+      return cbegin();
+    }
 
-      while (node)
+    const_iterator end() const
+    {
+      return cend();
+    }
+
+    iterator find(const Key& k)
+    {
+      node* where = find_approximately(k);
+      if (!where) return end();
+      if (!Comparator(where->pair1.first, k) && !Comparator(k, where->pair1.first))
       {
-        if (node->isLeaf)
+        return iterator(where, 0);
+      }
+      else if (where->type)
+      {
+        if (!Comparator(where->pair2.first, k) && !Comparator(k, where->pair2.first))
         {
-          if (node->leafPair.first == key)
-          {
-            return iterator(node, parent, index, true);
-          }
-          return end();
-        }
-
-        bool found = false;
-        for (int i = 0; i < node->inner.pairCount; ++i)
-        {
-          if (key == node->inner.pairs[i].first)
-          {
-            return iterator(nullptr, node, i, false);
-          }
-          if (key < node->inner.pairs[i].first)
-          {
-            parent = node;
-            node = node->inner.children[i];
-            index = i;
-            found = true;
-            break;
-          }
-        }
-
-        if (!found)
-        {
-          parent = node;
-          index = node->inner.pairCount;
-          node = node->inner.children[node->inner.pairCount];
+          return iterator(where, 1);
         }
       }
-
       return end();
     }
 
-    const_iterator find(const Key& key) const
+    const_iterator find(const Key& k) const
     {
-      const Node* node = root;
-      const Node* parent = nullptr;
-      int index = 0;
-
-      while (node)
+      node* where = find_approximately(k);
+      if (!where) return cend();
+      if (!Comparator(where->pair1.first, k) && !Comparator(k, where->pair1.first))
       {
-        if (node->isLeaf)
+        return const_iterator(where, 0);
+      }
+      else if (where->type)
+      {
+        if (!Comparator(where->pair2.first, k) && !Comparator(k, where->pair2.first))
         {
-          if (node->leafPair.first == key)
-          {
-            return const_iterator(node, parent, index, true);
-          }
-          return end();
-        }
-
-        bool found = false;
-        for (int i = 0; i < node->inner.pairCount; ++i)
-        {
-          if (key == node->inner.pairs[i].first)
-          {
-            return const_iterator(nullptr, node, i, false);
-          }
-          if (key < node->inner.pairs[i].first)
-          {
-            parent = node;
-            node = node->inner.children[i];
-            index = i;
-            found = true;
-            break;
-          }
-        }
-
-        if (!found)
-        {
-          parent = node;
-          index = node->inner.pairCount;
-          node = node->inner.children[node->inner.pairCount];
+          return const_iterator(where, 1);
         }
       }
-
-      return end();
+      return cend();
     }
+
+    ~map()
+    {
+      clear();
+    }
+
+  private:
+    node* root_;
+    size_t size_;
   };
-} // namespace asafov
+}
 
-#endif // MAP_HPP
+#endif
