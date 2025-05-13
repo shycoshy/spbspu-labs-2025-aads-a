@@ -107,10 +107,10 @@ namespace asafov
         }
         else
         {
-          std::swap(where->key1, key);
-          std::swap(where->val1, value);
-          where->key2 = key;
-          where->val2 = value;
+          std::swap(where->key1, where->key2);
+          std::swap(where->val1, where->val2);
+          where->key1 = key;
+          where->val1 = value;
         }
         split(where);
       }
