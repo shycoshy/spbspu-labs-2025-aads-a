@@ -4,8 +4,6 @@
 #include <iostream>
 #include <utility>
 #include <stdexcept>
-#include <vector>
-#include <algorithm>
 
 namespace asafov
 {
@@ -21,36 +19,30 @@ namespace asafov
       {
         struct
         {
-          Key keys[2];
-          Value values[2];
+          std::pair< Key, Value > pairs[2];
           Node* children[3];
-          int keyCount;
+          int pairCount;
         } inner;
 
-        struct
-        {
-          Key key;
-          Value value;
-        } leaf;
+        std::pair< Key, Value > leafPair;
       };
 
       Node() : isLeaf(false)
       {
-        inner.keyCount = 0;
+        inner.pairCount = 0;
         inner.children[0] = inner.children[1] = inner.children[2] = nullptr;
       }
 
       explicit Node(const Key& k, const Value& v) : isLeaf(true)
       {
-        leaf.key = k;
-        leaf.value = v;
+        leafPair = std::make_pair(k, v);
       }
 
       ~Node()
       {
         if (!isLeaf)
         {
-          for (int i = 0; i <= inner.keyCount; ++i)
+          for (int i = 0; i <= inner.pairCount; ++i)
           {
             delete inner.children[i];
           }
@@ -65,69 +57,49 @@ namespace asafov
     bool isFull(const Node* node) const
     {
       if (!node) return false;
-      return node->isLeaf ? true : (node->inner.keyCount == 2);
+      return node->isLeaf ? true : (node->inner.pairCount == 2);
     }
 
-    void insertIntoNode(Node* node, const Key& key, const Value& value, Node* leftChild = nullptr,
+    void insertIntoNode(Node* node, const std::pair< Key, Value >& pair, Node* leftChild = nullptr,
                         Node* rightChild = nullptr)
     {
-      if (node->isLeaf)
-      {
-        // Shouldn't happen as we handle leaves separately
-        return;
-      }
+      if (node->isLeaf) return;
 
       int pos = 0;
-      while (pos < node->inner.keyCount && key > node->inner.keys[pos])
+      while (pos < node->inner.pairCount && pair.first > node->inner.pairs[pos].first)
       {
         pos++;
       }
 
-      // Shift keys and children to make space
-      for (int i = node->inner.keyCount; i > pos; --i)
+      // Shift pairs and children to make space
+      for (int i = node->inner.pairCount; i > pos; --i)
       {
-        node->inner.keys[i] = node->inner.keys[i - 1];
-        node->inner.values[i] = node->inner.values[i - 1];
+        node->inner.pairs[i] = node->inner.pairs[i - 1];
       }
-      for (int i = node->inner.keyCount + 1; i > pos + 1; --i)
+      for (int i = node->inner.pairCount + 1; i > pos + 1; --i)
       {
         node->inner.children[i] = node->inner.children[i - 1];
       }
 
-      node->inner.keys[pos] = key;
-      node->inner.values[pos] = value;
-      if (leftChild)
-      {
-        node->inner.children[pos] = leftChild;
-      }
-      if (rightChild)
-      {
-        node->inner.children[pos + 1] = rightChild;
-      }
-      node->inner.keyCount++;
+      node->inner.pairs[pos] = pair;
+      if (leftChild) node->inner.children[pos] = leftChild;
+      if (rightChild) node->inner.children[pos + 1] = rightChild;
+      node->inner.pairCount++;
     }
 
-    Node* splitNode(Node* node, Key& promotedKey, Value& promotedValue, Node*& promotedLeft, Node*& promotedRight)
+    Node* splitNode(Node* node, std::pair< Key, Value >& promotedPair, Node*& promotedLeft, Node*& promotedRight)
     {
-      if (node->isLeaf)
-      {
-        // Shouldn't happen as leaves are always single key
-        return nullptr;
-      }
-
-      promotedKey = node->inner.keys[1];
-      promotedValue = node->inner.values[1];
+      promotedPair = node->inner.pairs[1];
 
       // Create new node for the right part
       Node* newNode = new Node();
-      newNode->inner.keyCount = 1;
-      newNode->inner.keys[0] = node->inner.keys[2];
-      newNode->inner.values[0] = node->inner.values[2];
+      newNode->inner.pairCount = 1;
+      newNode->inner.pairs[0] = node->inner.pairs[2];
       newNode->inner.children[0] = node->inner.children[2];
       newNode->inner.children[1] = node->inner.children[3];
 
       // Reset the original node
-      node->inner.keyCount = 1;
+      node->inner.pairCount = 1;
       node->inner.children[2] = nullptr;
 
       promotedLeft = node;
@@ -136,61 +108,59 @@ namespace asafov
       return newNode;
     }
 
-    Node* insert(Node* node, const Key& key, const Value& value, bool& inserted, Key& promotedKey, Value& promotedValue,
-                 Node*& promotedLeft, Node*& promotedRight)
+    Node* insert(Node* node, const std::pair< Key, Value >& pair, bool& inserted,
+                 std::pair< Key, Value >& promotedPair, Node*& promotedLeft, Node*& promotedRight)
     {
       if (node->isLeaf)
       {
-        if (node->leaf.key == key)
+        if (node->leafPair.first == pair.first)
         {
-          // Key already exists, update value
-          node->leaf.value = value;
+          // Key exists, update value
+          node->leafPair.second = pair.second;
           inserted = false;
           return nullptr;
         }
 
         // Need to split this leaf and promote
-        if (key < node->leaf.key)
+        if (pair.first < node->leafPair.first)
         {
-          promotedKey = key;
-          promotedValue = value;
-          promotedLeft = new Node(key, value);
+          promotedPair = pair;
+          promotedLeft = new Node(pair.first, pair.second);
           promotedRight = node;
         }
         else
         {
-          promotedKey = node->leaf.key;
-          promotedValue = node->leaf.value;
+          promotedPair = node->leafPair;
           promotedLeft = node;
-          promotedRight = new Node(key, value);
+          promotedRight = new Node(pair.first, pair.second);
         }
         inserted = true;
         return nullptr;
       }
 
-      // Find the appropriate child to insert into
+      // Find appropriate child
       int childPos = 0;
-      while (childPos < node->inner.keyCount && key > node->inner.keys[childPos])
+      while (childPos < node->inner.pairCount && pair.first > node->inner.pairs[childPos].first)
       {
         childPos++;
       }
 
-      if (childPos < node->inner.keyCount && key == node->inner.keys[childPos])
+      // Check if key exists in this node
+      if (childPos < node->inner.pairCount && pair.first == node->inner.pairs[childPos].first)
       {
-        // Key already exists in this node, update value
-        node->inner.values[childPos] = value;
+        node->inner.pairs[childPos].second = pair.second;
         inserted = false;
         return nullptr;
       }
 
       Node* child = node->inner.children[childPos];
-      Key newPromotedKey;
-      Value newPromotedValue;
+      std::pair< Key, Value > newPromotedPair;
       Node* newLeft = nullptr;
       Node* newRight = nullptr;
       bool childInserted = true;
 
-      Node* result = insert(child, key, value, childInserted, newPromotedKey, newPromotedValue, newLeft, newRight);
+      Node* result = insert(child, pair, childInserted, newPromotedPair, newLeft, newRight);
+      (void)result; // Avoid unused variable warning
 
       if (!childInserted)
       {
@@ -203,23 +173,23 @@ namespace asafov
         // Child was split, need to promote
         if (!isFull(node))
         {
-          insertIntoNode(node, newPromotedKey, newPromotedValue, newLeft, newRight);
+          insertIntoNode(node, newPromotedPair, newLeft, newRight);
           inserted = true;
           return nullptr;
         }
         else
         {
           // Current node is full, need to split
-          Node* newNode = splitNode(node, promotedKey, promotedValue, promotedLeft, promotedRight);
+          Node* newNode = splitNode(node, promotedPair, promotedLeft, promotedRight);
 
-          // Determine where to put the promoted key from child
-          if (newPromotedKey < promotedKey)
+          // Determine where to put the promoted pair from child
+          if (newPromotedPair.first < promotedPair.first)
           {
-            insertIntoNode(promotedLeft, newPromotedKey, newPromotedValue, newLeft, newRight);
+            insertIntoNode(promotedLeft, newPromotedPair, newLeft, newRight);
           }
           else
           {
-            insertIntoNode(promotedRight, newPromotedKey, newPromotedValue, newLeft, newRight);
+            insertIntoNode(promotedRight, newPromotedPair, newLeft, newRight);
           }
 
           return newNode;
@@ -236,42 +206,22 @@ namespace asafov
 
       if (node->isLeaf)
       {
-        return (node->leaf.key == key) ? node : nullptr;
+        return (node->leafPair.first == key) ? node : nullptr;
       }
 
-      for (int i = 0; i < node->inner.keyCount; ++i)
+      for (int i = 0; i < node->inner.pairCount; ++i)
       {
-        if (key == node->inner.keys[i])
+        if (key == node->inner.pairs[i].first)
         {
           return node;
         }
-        if (key < node->inner.keys[i])
+        if (key < node->inner.pairs[i].first)
         {
           return findNode(node->inner.children[i], key);
         }
       }
 
-      return findNode(node->inner.children[node->inner.keyCount], key);
-    }
-
-    void inOrderTraversal(const Node* node, std::vector< std::pair< Key, Value > >& result) const
-    {
-      if (!node) return;
-
-      if (node->isLeaf)
-      {
-        result.emplace_back(node->leaf.key, node->leaf.value);
-        return;
-      }
-
-      for (int i = 0; i <= node->inner.keyCount; ++i)
-      {
-        inOrderTraversal(node->inner.children[i], result);
-        if (i < node->inner.keyCount)
-        {
-          result.emplace_back(node->inner.keys[i], node->inner.values[i]);
-        }
-      }
+      return findNode(node->inner.children[node->inner.pairCount], key);
     }
 
   public:
@@ -287,8 +237,7 @@ namespace asafov
     Value& operator[](const Key& key)
     {
       bool inserted;
-      Key promotedKey;
-      Value promotedValue;
+      std::pair< Key, Value > promotedPair;
       Node* promotedLeft = nullptr;
       Node* promotedRight = nullptr;
 
@@ -296,18 +245,19 @@ namespace asafov
       {
         root = new Node(key, Value());
         size_++;
-        return root->leaf.value;
+        return root->leafPair.second;
       }
 
-      Node* newRoot = insert(root, key, Value(), inserted, promotedKey, promotedValue, promotedLeft, promotedRight);
+      Node* newRoot = insert(root, std::make_pair(key, Value()), inserted, promotedPair, promotedLeft, promotedRight);
+      (void)newRoot; // Avoid unused variable warning
 
       if (promotedLeft)
       {
         Node* oldRoot = root;
+        (void)oldRoot; // Avoid unused variable warning
         root = new Node();
-        root->inner.keyCount = 1;
-        root->inner.keys[0] = promotedKey;
-        root->inner.values[0] = promotedValue;
+        root->inner.pairCount = 1;
+        root->inner.pairs[0] = promotedPair;
         root->inner.children[0] = promotedLeft;
         root->inner.children[1] = promotedRight;
       }
@@ -323,8 +273,8 @@ namespace asafov
         throw std::runtime_error("Key not found after insertion");
       }
       return const_cast< Node* >(found)->isLeaf
-               ? const_cast< Node* >(found)->leaf.value
-               : const_cast< Node* >(found)->inner.values[0];
+               ? const_cast< Node* >(found)->leafPair.second
+               : const_cast< Node* >(found)->inner.pairs[0].second;
     }
 
     const Value& at(const Key& key) const
@@ -334,7 +284,7 @@ namespace asafov
       {
         throw std::out_of_range("Key not found");
       }
-      return node->isLeaf ? node->leaf.value : node->inner.values[0];
+      return node->isLeaf ? node->leafPair.second : node->inner.pairs[0].second;
     }
 
     size_t size() const
@@ -357,39 +307,15 @@ namespace asafov
     class iterator
     {
     private:
-      struct StackItem
-      {
-        Node* node;
-        int index;
-      };
-
       Node* current;
-      std::vector< StackItem > stack;
+      Node* parent;
+      int index;
       bool atLeaf;
 
-      void moveToLeftmost(Node* node)
-      {
-        while (node)
-        {
-          if (node->isLeaf)
-          {
-            current = node;
-            atLeaf = true;
-            return;
-          }
-          stack.push_back({node, 0});
-          node = node->inner.children[0];
-        }
-        current = nullptr;
-      }
-
     public:
-      iterator(Node* root = nullptr) : current(nullptr), atLeaf(false)
+      iterator(Node* node = nullptr, Node* p = nullptr, int i = 0, bool leaf = false)
+        : current(node), parent(p), index(i), atLeaf(leaf)
       {
-        if (root)
-        {
-          moveToLeftmost(root);
-        }
       }
 
       std::pair< const Key, Value& > operator*()
@@ -400,71 +326,51 @@ namespace asafov
         }
         if (atLeaf)
         {
-          return {current->leaf.key, current->leaf.value};
+          return {current->leafPair.first, current->leafPair.second};
         }
         else
         {
-          auto& top = stack.back();
-          return {top.node->inner.keys[top.index], top.node->inner.values[top.index]};
+          if (parent)
+          {
+            return {parent->inner.pairs[index].first, parent->inner.pairs[index].second};
+          }
+          throw std::runtime_error("Invalid iterator state");
         }
       }
 
       iterator& operator++()
       {
-        if (!current && stack.empty())
-        {
-          return *this;
-        }
+        if (!current) return *this;
 
         if (atLeaf)
         {
           atLeaf = false;
-          if (stack.empty())
+          if (!parent)
           {
             current = nullptr;
           }
-          else
-          {
-            auto& top = stack.back();
-            if (top.index < top.node->inner.keyCount)
-            {
-              // Return the key in the inner node
-              return *this;
-            }
-            else
-            {
-              // Need to move up
-              current = nullptr;
-              return *this;
-            }
-          }
+          return *this;
         }
-        else
+
+        if (parent)
         {
-          if (!stack.empty())
+          index++;
+          if (index < parent->inner.pairCount)
           {
-            auto& top = stack.back();
-            top.index++;
-            if (top.index < top.node->inner.keyCount)
+            return *this;
+          }
+
+          // Move to next child
+          if (index <= parent->inner.pairCount)
+          {
+            current = parent->inner.children[index];
+            while (current && !current->isLeaf)
             {
-              // There's another key in this node
-              return *this;
+              parent = current;
+              current = current->inner.children[0];
+              index = 0;
             }
-            else
-            {
-              // Need to move to the next child
-              if (top.index <= top.node->inner.keyCount)
-              {
-                Node* next = top.node->inner.children[top.index];
-                stack.pop_back();
-                moveToLeftmost(next);
-              }
-              else
-              {
-                stack.pop_back();
-                current = nullptr;
-              }
-            }
+            atLeaf = (current != nullptr);
           }
           else
           {
@@ -477,23 +383,26 @@ namespace asafov
 
       bool operator!=(const iterator& other) const
       {
-        if (current != other.current) return true;
-        if (stack.size() != other.stack.size()) return true;
-        for (size_t i = 0; i < stack.size(); ++i)
-        {
-          if (stack[i].node != other.stack[i].node ||
-            stack[i].index != other.stack[i].index)
-          {
-            return true;
-          }
-        }
-        return false;
+        return current != other.current ||
+          parent != other.parent ||
+          index != other.index ||
+          atLeaf != other.atLeaf;
       }
     };
 
     iterator begin()
     {
-      return iterator(root);
+      Node* node = root;
+      Node* parent = nullptr;
+      int index = 0;
+
+      while (node && !node->isLeaf)
+      {
+        parent = node;
+        node = node->inner.children[0];
+      }
+
+      return iterator(node, parent, 0, node != nullptr);
     }
 
     iterator end()
@@ -504,51 +413,48 @@ namespace asafov
     iterator find(const Key& key)
     {
       Node* node = root;
-      std::vector< iterator::StackItem > path;
+      Node* parent = nullptr;
+      int index = 0;
 
       while (node)
       {
         if (node->isLeaf)
         {
-          if (node->leaf.key == key)
+          if (node->leafPair.first == key)
           {
-            iterator it;
-            it.current = node;
-            it.atLeaf = true;
-            return it;
+            return iterator(node, parent, index, true);
           }
           return end();
         }
 
         bool found = false;
-        for (int i = 0; i < node->inner.keyCount; ++i)
+        for (int i = 0; i < node->inner.pairCount; ++i)
         {
-          if (key == node->inner.keys[i])
+          if (key == node->inner.pairs[i].first)
           {
-            iterator it;
-            it.stack.push_back({node, i});
-            return it;
+            return iterator(nullptr, node, i, false);
           }
-          if (key < node->inner.keys[i])
+          if (key < node->inner.pairs[i].first)
           {
-            path.push_back({node, i});
+            parent = node;
             node = node->inner.children[i];
+            index = i;
             found = true;
             break;
           }
-          path.push_back({node, i});
         }
 
         if (!found)
         {
-          path.push_back({node, node->inner.keyCount});
-          node = node->inner.children[node->inner.keyCount];
+          parent = node;
+          index = node->inner.pairCount;
+          node = node->inner.children[node->inner.pairCount];
         }
       }
 
       return end();
     }
   };
-}
+} // namespace asafov
 
-#endif
+#endif // MAP_HPP
