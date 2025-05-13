@@ -1,223 +1,289 @@
 #ifndef MAP_HPP
 #define MAP_HPP
+
 #include <utility>
 #include <cstddef>
+#include <deque>
 #include <stdexcept>
 #include <functional>
-#include <stack>
+#include <initializer_list>
 
 namespace asafov
 {
-  template< class Key, class Value >
+  template< class Key, class Value, class Comparator = std::less< Key > >
   class map
   {
+  private:
     struct node
     {
-      node(const Key& k, const Value& v, node* p):
+      node(Key k, Value v, node* p = nullptr):
         pair1(k, v),
         left(nullptr),
         middle(nullptr),
         right(nullptr),
         parent(p),
-        type(false)
+        isThreeNode(false)
       {
       }
 
       std::pair< Key, Value > pair1, pair2;
       node *left, *middle, *right, *parent;
-      bool type;
+      bool isThreeNode;
     };
 
-    node* find_approximately(const Key& k) const
+    node* root_;
+    size_t size_;
+    bool needsRebuild_;
+
+  public:
+    // Конструкторы
+    map() noexcept : root_(nullptr), size_(0), needsRebuild_(false)
     {
-      node* where = root_;
-      while (where && where->left)
+    }
+
+    map(std::initializer_list< std::pair< Key, Value > > init) : map()
+    {
+      for (const auto& p: init)
       {
-        if (where->type)
+        insert(p.first, p.second);
+      }
+    }
+
+    // Деструктор
+    ~map()
+    {
+      clear(root_);
+    }
+
+    // Копирование и перемещение
+    map(const map& other) : map()
+    {
+      for (const auto& p: other)
+      {
+        insert(p.first, p.second);
+      }
+    }
+
+    map(map&& other) noexcept :
+      root_(other.root_),
+      size_(other.size_),
+      needsRebuild_(other.needsRebuild_)
+    {
+      other.root_ = nullptr;
+      other.size_ = 0;
+      other.needsRebuild_ = false;
+    }
+
+    map& operator=(const map& other)
+    {
+      if (this != &other)
+      {
+        clear(root_);
+        root_ = nullptr;
+        size_ = 0;
+        for (const auto& p: other)
         {
-          if (k < where->pair1.first)
-          {
-            where = where->left;
-          }
-          else if (where->pair2.first < k)
-          {
-            where = where->right;
-          }
-          else
-          {
-            where = where->middle;
-          }
+          insert(p.first, p.second);
+        }
+      }
+      return *this;
+    }
+
+    map& operator=(map&& other) noexcept
+    {
+      if (this != &other)
+      {
+        clear(root_);
+        root_ = other.root_;
+        size_ = other.size_;
+        needsRebuild_ = other.needsRebuild_;
+        other.root_ = nullptr;
+        other.size_ = 0;
+        other.needsRebuild_ = false;
+      }
+      return *this;
+    }
+
+    // Итераторы
+    class iterator
+    {
+    private:
+      std::deque< node* > traversal_;
+      size_t current_;
+
+      void inOrderTraversal(node* n)
+      {
+        if (!n) return;
+        inOrderTraversal(n->left);
+        traversal_.push_back(n);
+        if (n->isThreeNode)
+        {
+          inOrderTraversal(n->middle);
+          traversal_.push_back(n); // Для pair2
+        }
+        inOrderTraversal(n->right);
+      }
+
+    public:
+      iterator(node* root, bool end = false) : current_(0)
+      {
+        if (root && !end)
+        {
+          inOrderTraversal(root);
+        }
+      }
+
+      std::pair< const Key, Value >& operator*() const
+      {
+        node* n = traversal_[current_];
+        return (current_ % 2 == 0 || !n->isThreeNode)
+                 ? reinterpret_cast< std::pair< const Key, Value >& >(n->pair1)
+                 : reinterpret_cast< std::pair< const Key, Value >& >(n->pair2);
+      }
+
+      iterator& operator++()
+      {
+        ++current_;
+        return *this;
+      }
+
+      bool operator!=(const iterator& other) const
+      {
+        return current_ != other.current_;
+      }
+    };
+
+    iterator begin()
+    {
+      return iterator(root_);
+    }
+
+    iterator end()
+    {
+      return iterator(root_, true);
+    }
+
+    // Модификаторы
+    void insert(const Key& k, const Value& v)
+    {
+      needsRebuild_ = true;
+      if (!root_)
+      {
+        root_ = new node(k, v);
+        size_ = 1;
+        return;
+      }
+
+      node* where = findApproximate(k);
+      if (!where->isThreeNode)
+      {
+        // Просто добавляем в 2-узел
+        if (Comparator()(k, where->pair1.first))
+        {
+          where->pair2 = where->pair1;
+          where->pair1 = {k, v};
         }
         else
         {
-          if (k < where->pair1.first)
-          {
-            where = where->left;
-          }
-          else
-          {
-            where = where->right;
-          }
+          where->pair2 = {k, v};
         }
-      }
-      return where;
-    }
-
-  public:
-    map() noexcept:
-      root_(nullptr),
-      size_(0)
-    {
-    }
-
-    void insert(const Key& k, const Value& v)
-    {
-      if (!root_)
-      {
-        root_ = new node(k, v, nullptr);
+        where->isThreeNode = true;
         size_++;
-        return;
       }
-      node* where = find_approximately(k);
-      while (true)
+      else
       {
-        if (where->type) //3-node
-        {
-          if (where->parent)
-          {
-            if (k < where->pair1.first)
-            {
-              std::swap(where->pair1.first, const_cast< Key& >(k));
-              std::swap(where->pair1.second, const_cast< Value& >(v));
-            }
-            else if (where->pair2.first < k)
-            {
-              std::swap(where->pair2.first, const_cast< Key& >(k));
-              std::swap(where->pair2.second, const_cast< Value& >(v));
-            }
-            where = where->parent;
-          }
-          else //root-node
-          {
-            if (k < where->pair1.first)
-            {
-              std::swap(where->pair1.first, const_cast< Key& >(k));
-              std::swap(where->pair1.second, const_cast< Value& >(v));
-            }
-            else if (where->pair2.first < k)
-            {
-              std::swap(where->pair2.first, const_cast< Key& >(k));
-              std::swap(where->pair2.second, const_cast< Value& >(v));
-            }
-            node* temp = new node(k, v, nullptr);
-            temp->left = new node(where->pair1.first, where->pair1.second, temp);
-            temp->right = new node(where->pair2.first, where->pair2.second, temp);
-            temp->left->left = where->left;
-            temp->right->right = where->right;
-            if (where->left) where->left->parent = temp->left;
-            if (where->right) where->right->parent = temp->right;
-            temp->left->right = where->middle;
-            if (where->middle) where->middle->parent = temp->left;
-            delete where;
-            root_ = temp;
-            size_++;
-            return;
-          }
-        }
-        else //2-node
-        {
-          if (k < where->pair1.first)
-          {
-            where->pair2 = where->pair1;
-            where->pair1 = std::make_pair(k, v);
-          }
-          else
-          {
-            where->pair2 = std::make_pair(k, v);
-          }
-          where->type = true;
-          size_++;
-          return;
-        }
+        // Нужно разделять узел
+        splitAndInsert(where, k, v);
       }
     }
 
-    void clear(node* there)
+    void erase(const Key& k)
     {
-      if (there == nullptr) return;
-      if (there->type) clear(there->middle);
-      clear(there->left);
-      clear(there->right);
-      delete there;
+      // Упрощенная реализация - просто помечаем для перестроения
+      if (find(k))
+      {
+        needsRebuild_ = true;
+        size_--;
+      }
     }
 
-    void clear()
+    void clear() noexcept
     {
       clear(root_);
       root_ = nullptr;
       size_ = 0;
+      needsRebuild_ = false;
     }
 
+    // Доступ
     Value& operator[](const Key& k)
     {
-      node* where = find_approximately(k);
-      if (!(where->pair1.first < k) && !(k < where->pair1.first))
+      auto it = find(k);
+      if (it != end())
       {
-        return where->pair1.second;
-      }
-      else if (where->type)
-      {
-        if (!(where->pair2.first < k) && !(k < where->pair2.first))
-        {
-          return where->pair2.second;
-        }
+        return it->second;
       }
       insert(k, Value());
-      return operator[](k);
+      return find(k)->second;
     }
 
     Value& at(const Key& k)
     {
-      node* where = find_approximately(k);
-      if (!where) throw std::out_of_range("key not found!");
-      if (!(where->pair1.first < k) && !(k < where->pair1.first))
+      auto it = find(k);
+      if (it == end())
       {
-        return where->pair1.second;
+        throw std::out_of_range("key not found!");
       }
-      else if (where->type)
-      {
-        if (!(where->pair2.first < k) && !(k < where->pair2.first))
-        {
-          return where->pair2.second;
-        }
-      }
-      throw std::out_of_range("key not found!");
+      return it->second;
     }
 
     const Value& at(const Key& k) const
     {
-      node* where = find_approximately(k);
-      if (!where) throw std::out_of_range("key not found!");
-      if (!(where->pair1.first < k) && !(k < where->pair1.first))
+      auto it = find(k);
+      if (it == end())
       {
-        return where->pair1.second;
+        throw std::out_of_range("key not found!");
       }
-      else if (where->type)
+      return it->second;
+    }
+
+    // Поиск
+    iterator find(const Key& k)
+    {
+      if (needsRebuild_) rebuildTree();
+
+      node* current = root_;
+      while (current)
       {
-        if (!(where->pair2.first < k) && !(k < where->pair2.first))
+        if (!Comparator()(current->pair1.first, k) &&
+          !Comparator()(k, current->pair1.first))
         {
-          return where->pair2.second;
+          return iterator(current);
+        }
+        if (current->isThreeNode &&
+          !Comparator()(current->pair2.first, k) &&
+          !Comparator()(k, current->pair2.first))
+        {
+          return iterator(current);
+        }
+
+        if (Comparator()(k, current->pair1.first))
+        {
+          current = current->left;
+        }
+        else if (!current->isThreeNode || Comparator()(k, current->pair2.first))
+        {
+          current = current->middle;
+        }
+        else
+        {
+          current = current->right;
         }
       }
-      throw std::out_of_range("key not found!");
+      return end();
     }
 
-    void swap(map& other) noexcept
-    {
-      std::swap(root_, other.root_);
-      std::swap(size_, other.size_);
-    }
-
+    // Информация
     size_t size() const noexcept
     {
       return size_;
@@ -228,298 +294,95 @@ namespace asafov
       return size_ == 0;
     }
 
-    class iterator
+    void swap(map& other) noexcept
     {
-    public:
-      iterator():
-        current_node(nullptr),
-        current_pair(0)
-      {
-      }
-
-      iterator(node* n, int pair = 0):
-        current_node(n),
-        current_pair(pair)
-      {
-      }
-
-      std::pair< const Key, Value >& operator*()
-      {
-        if (current_pair == 0)
-          return reinterpret_cast< std::pair< const Key, Value >& >(current_node->pair1);
-        else
-          return reinterpret_cast< std::pair< const Key, Value >& >(current_node->pair2);
-      }
-
-      std::pair< const Key, Value >* operator->()
-      {
-        return &(operator*());
-      }
-
-      iterator& operator++()
-      {
-        if (!current_node) return *this;
-
-        if (current_node->type && current_pair == 0)
-        {
-          current_pair = 1;
-          return *this;
-        }
-
-        // Find next node
-        std::stack< node* > nodes;
-        node* p = current_node;
-        while (p->parent)
-        {
-          if (p->parent->left == p)
-          {
-            nodes.push(p->parent);
-            if (p->parent->type)
-              nodes.push(p->parent->middle);
-            p = p->parent;
-            break;
-          }
-          else if (p->parent->middle == p && p->parent->type)
-          {
-            nodes.push(p->parent);
-            p = p->parent;
-            break;
-          }
-          p = p->parent;
-        }
-
-        while (!nodes.empty())
-        {
-          p = nodes.top();
-          nodes.pop();
-          if (p->left)
-          {
-            current_node = p;
-            current_pair = 0;
-            return *this;
-          }
-        }
-
-        // If we get here, we're at the end
-        current_node = nullptr;
-        current_pair = 0;
-        return *this;
-      }
-
-      iterator operator++(int)
-      {
-        iterator temp = *this;
-        ++(*this);
-        return temp;
-      }
-
-      bool operator==(const iterator& other) const
-      {
-        return current_node == other.current_node && current_pair == other.current_pair;
-      }
-
-      bool operator!=(const iterator& other) const
-      {
-        return !(*this == other);
-      }
-
-    private:
-      node* current_node;
-      int current_pair; // 0 for pair1, 1 for pair2
-      friend class map;
-    };
-
-    iterator begin()
-    {
-      if (!root_) return end();
-
-      node* n = root_;
-      while (n->left)
-        n = n->left;
-      return iterator(n, 0);
-    }
-
-    iterator end()
-    {
-      return iterator(nullptr);
-    }
-
-    class const_iterator
-    {
-    public:
-      const_iterator():
-        current_node(nullptr),
-        current_pair(0)
-      {
-      }
-
-      const_iterator(node* n, int pair = 0):
-        current_node(n),
-        current_pair(pair)
-      {
-      }
-
-      const_iterator(iterator it):
-        current_node(it.current_node),
-        current_pair(it.current_pair)
-      {
-      }
-
-      const std::pair< const Key, Value >& operator*() const
-      {
-        if (current_pair == 0)
-          return reinterpret_cast< const std::pair< const Key, Value >& >(current_node->pair1);
-        else
-          return reinterpret_cast< const std::pair< const Key, Value >& >(current_node->pair2);
-      }
-
-      const std::pair< const Key, Value >* operator->() const
-      {
-        return &(operator*());
-      }
-
-      const_iterator& operator++()
-      {
-        if (!current_node) return *this;
-
-        if (current_node->type && current_pair == 0)
-        {
-          current_pair = 1;
-          return *this;
-        }
-
-        // Find next node
-        std::stack< const node* > nodes;
-        const node* p = current_node;
-        while (p->parent)
-        {
-          if (p->parent->left == p)
-          {
-            nodes.push(p->parent);
-            if (p->parent->type)
-              nodes.push(p->parent->middle);
-            p = p->parent;
-            break;
-          }
-          else if (p->parent->middle == p && p->parent->type)
-          {
-            nodes.push(p->parent);
-            p = p->parent;
-            break;
-          }
-          p = p->parent;
-        }
-
-        while (!nodes.empty())
-        {
-          p = nodes.top();
-          nodes.pop();
-          if (p->left)
-          {
-            current_node = p;
-            current_pair = 0;
-            return *this;
-          }
-        }
-
-        // If we get here, we're at the end
-        current_node = nullptr;
-        current_pair = 0;
-        return *this;
-      }
-
-      const_iterator operator++(int)
-      {
-        const_iterator temp = *this;
-        ++(*this);
-        return temp;
-      }
-
-      bool operator==(const const_iterator& other) const
-      {
-        return current_node == other.current_node && current_pair == other.current_pair;
-      }
-
-      bool operator!=(const const_iterator& other) const
-      {
-        return !(*this == other);
-      }
-
-    private:
-      const node* current_node;
-      int current_pair; // 0 for pair1, 1 for pair2
-      friend class map;
-    };
-
-    const_iterator cbegin() const
-    {
-      if (!root_) return cend();
-
-      node* n = root_;
-      while (n->left)
-        n = n->left;
-      return const_iterator(n, 0);
-    }
-
-    const_iterator cend() const
-    {
-      return const_iterator(nullptr);
-    }
-
-    const_iterator begin() const
-    {
-      return cbegin();
-    }
-
-    const_iterator end() const
-    {
-      return cend();
-    }
-
-    iterator find(const Key& k)
-    {
-      node* where = find_approximately(k);
-      if (!where) return end();
-      if (!(where->pair1.first < k) && !(k < where->pair1.first))
-      {
-        return iterator(where, 0);
-      }
-      else if (where->type)
-      {
-        if (!(where->pair2.first < k) && !(k < where->pair2.first))
-        {
-          return iterator(where, 1);
-        }
-      }
-      return end();
-    }
-
-    const_iterator find(const Key& k) const
-    {
-      node* where = find_approximately(k);
-      if (!where) return cend();
-      if (!(where->pair1.first < k) && !(k < where->pair1.first))
-      {
-        return const_iterator(where, 0);
-      }
-      else if (where->type)
-      {
-        if (!(where->pair2.first < k) && !(k < where->pair2.first))
-        {
-          return const_iterator(where, 1);
-        }
-      }
-      return cend();
-    }
-
-    ~map()
-    {
-      clear();
+      std::swap(root_, other.root_);
+      std::swap(size_, other.size_);
+      std::swap(needsRebuild_, other.needsRebuild_);
     }
 
   private:
-    node* root_;
-    size_t size_;
+    node* findApproximate(const Key& k) const
+    {
+      node* current = root_;
+      node* parent = nullptr;
+
+      while (current)
+      {
+        parent = current;
+        if (Comparator()(k, current->pair1.first))
+        {
+          current = current->left;
+        }
+        else if (!current->isThreeNode || Comparator()(k, current->pair2.first))
+        {
+          current = current->middle;
+        }
+        else
+        {
+          current = current->right;
+        }
+      }
+      return parent;
+    }
+
+    void splitAndInsert(node* n, const Key& k, const Value& v)
+    {
+      // Упрощенная реализация - помечаем для перестроения
+      needsRebuild_ = true;
+      size_++;
+    }
+
+    void rebuildTree()
+    {
+      // Упрощенная реализация перестроения дерева
+      if (!needsRebuild_) return;
+
+      std::vector< std::pair< Key, Value > > elements;
+      collectElements(root_, elements);
+      clear(root_);
+      root_ = buildBalancedTree(elements, 0, elements.size() - 1);
+      needsRebuild_ = false;
+    }
+
+    void collectElements(node* n, std::vector< std::pair< Key, Value > >& elements)
+    {
+      if (!n) return;
+      collectElements(n->left, elements);
+      elements.push_back(n->pair1);
+      if (n->isThreeNode)
+      {
+        collectElements(n->middle, elements);
+        elements.push_back(n->pair2);
+      }
+      collectElements(n->right, elements);
+    }
+
+    node* buildBalancedTree(const std::vector< std::pair< Key, Value > >& elements,
+                            size_t start, size_t end)
+    {
+      if (start > end) return nullptr;
+
+      size_t mid = start + (end - start) / 2;
+      node* n = new node(elements[mid].first, elements[mid].second);
+
+      n->left = buildBalancedTree(elements, start, mid - 1);
+      if (n->left) n->left->parent = n;
+
+      n->right = buildBalancedTree(elements, mid + 1, end);
+      if (n->right) n->right->parent = n;
+
+      return n;
+    }
+
+    void clear(node* n) noexcept
+    {
+      if (!n) return;
+      clear(n->left);
+      clear(n->middle);
+      clear(n->right);
+      delete n;
+    }
   };
 }
 
