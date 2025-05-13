@@ -35,11 +35,11 @@ namespace asafov
       {
         if (where->type)
         {
-          if (Comparator(k, where->pair1.first))
+          if (Comparator()(k, where->pair1.first))
           {
             where = where->left;
           }
-          else if (Comparator(where->pair2.first, k))
+          else if (Comparator()(where->pair2.first, k))
           {
             where = where->right;
           }
@@ -50,7 +50,7 @@ namespace asafov
         }
         else
         {
-          if (Comparator(k, where->pair1.first))
+          if (Comparator()(k, where->pair1.first))
           {
             where = where->left;
           }
@@ -85,12 +85,12 @@ namespace asafov
         {
           if (where->parent)
           {
-            if (Comparator(k, where->pair1.first))
+            if (Comparator()(k, where->pair1.first))
             {
               std::swap(where->pair1.first, k);
               std::swap(where->pair1.second, v);
             }
-            else if (Comparator(where->pair2.first, k))
+            else if (Comparator()(where->pair2.first, k))
             {
               std::swap(where->pair2.first, k);
               std::swap(where->pair2.second, v);
@@ -99,12 +99,12 @@ namespace asafov
           }
           else //root-node
           {
-            if (Comparator(k, where->pair1.first))
+            if (Comparator()(k, where->pair1.first))
             {
               std::swap(where->pair1.first, k);
               std::swap(where->pair1.second, v);
             }
-            else if (Comparator(where->pair2.first, k))
+            else if (Comparator()(where->pair2.first, k))
             {
               std::swap(where->pair2.first, k);
               std::swap(where->pair2.second, v);
@@ -126,7 +126,7 @@ namespace asafov
         }
         else //2-node
         {
-          if (Comparator(k, where->pair1.first))
+          if (Comparator()(k, where->pair1.first))
           {
             where->pair2 = where->pair1;
             where->pair1 = std::make_pair(k, v);
@@ -161,13 +161,13 @@ namespace asafov
     Value& operator[](const Key& k)
     {
       node* where = find_approximately(k);
-      if (!Comparator(where->pair1.first, k) && !Comparator(k, where->pair1.first))
+      if (!Comparator()(where->pair1.first, k) && !Comparator()(k, where->pair1.first))
       {
         return where->pair1.second;
       }
       else if (where->type)
       {
-        if (!Comparator(where->pair2.first, k) && !Comparator(k, where->pair2.first))
+        if (!Comparator()(where->pair2.first, k) && !Comparator()(k, where->pair2.first))
         {
           return where->pair2.second;
         }
@@ -180,13 +180,13 @@ namespace asafov
     {
       node* where = find_approximately(k);
       if (!where) throw std::out_of_range("key not found!");
-      if (!Comparator(where->pair1.first, k) && !Comparator(k, where->pair1.first))
+      if (!Comparator()(where->pair1.first, k) && !Comparator()(k, where->pair1.first))
       {
         return where->pair1.second;
       }
       else if (where->type)
       {
-        if (!Comparator(where->pair2.first, k) && !Comparator(k, where->pair2.first))
+        if (!Comparator()(where->pair2.first, k) && !Comparator()(k, where->pair2.first))
         {
           return where->pair2.second;
         }
@@ -198,13 +198,13 @@ namespace asafov
     {
       node* where = find_approximately(k);
       if (!where) throw std::out_of_range("key not found!");
-      if (!Comparator(where->pair1.first, k) && !Comparator(k, where->pair1.first))
+      if (!Comparator()(where->pair1.first, k) && !Comparator()(k, where->pair1.first))
       {
         return where->pair1.second;
       }
       else if (where->type)
       {
-        if (!Comparator(where->pair2.first, k) && !Comparator(k, where->pair2.first))
+        if (!Comparator()(where->pair2.first, k) && !Comparator()(k, where->pair2.first))
         {
           return where->pair2.second;
         }
@@ -389,8 +389,8 @@ namespace asafov
         }
 
         // Find next node
-        std::stack< node* > nodes;
-        node* p = current_node;
+        std::stack< const node* > nodes;
+        const node* p = current_node;
         while (p->parent)
         {
           if (p->parent->left == p)
@@ -480,13 +480,13 @@ namespace asafov
     {
       node* where = find_approximately(k);
       if (!where) return end();
-      if (!Comparator(where->pair1.first, k) && !Comparator(k, where->pair1.first))
+      if (!Comparator()(where->pair1.first, k) && !Comparator()(k, where->pair1.first))
       {
         return iterator(where, 0);
       }
       else if (where->type)
       {
-        if (!Comparator(where->pair2.first, k) && !Comparator(k, where->pair2.first))
+        if (!Comparator()(where->pair2.first, k) && !Comparator()(k, where->pair2.first))
         {
           return iterator(where, 1);
         }
@@ -498,13 +498,13 @@ namespace asafov
     {
       node* where = find_approximately(k);
       if (!where) return cend();
-      if (!Comparator(where->pair1.first, k) && !Comparator(k, where->pair1.first))
+      if (!Comparator()(where->pair1.first, k) && !Comparator()(k, where->pair1.first))
       {
         return const_iterator(where, 0);
       }
       else if (where->type)
       {
-        if (!Comparator(where->pair2.first, k) && !Comparator(k, where->pair2.first))
+        if (!Comparator()(where->pair2.first, k) && !Comparator()(k, where->pair2.first))
         {
           return const_iterator(where, 1);
         }
