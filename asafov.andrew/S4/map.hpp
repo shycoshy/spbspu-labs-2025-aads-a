@@ -225,6 +225,10 @@ namespace asafov
     }
 
   public:
+    // Forward declarations
+    class iterator;
+    class const_iterator;
+
     map() : root(nullptr), size_(0)
     {
     }
@@ -320,7 +324,7 @@ namespace asafov
 
       std::pair< const Key, Value& > operator*()
       {
-        if (!current)
+        if (!current && !parent)
         {
           throw std::runtime_error("Dereferencing end iterator");
         }
@@ -328,19 +332,16 @@ namespace asafov
         {
           return {current->leafPair.first, current->leafPair.second};
         }
-        else
+        else if (parent)
         {
-          if (parent)
-          {
-            return {parent->inner.pairs[index].first, parent->inner.pairs[index].second};
-          }
-          throw std::runtime_error("Invalid iterator state");
+          return {parent->inner.pairs[index].first, parent->inner.pairs[index].second};
         }
+        throw std::runtime_error("Invalid iterator state");
       }
 
       iterator& operator++()
       {
-        if (!current) return *this;
+        if (!current && !parent) return *this;
 
         if (atLeaf)
         {
@@ -348,45 +349,169 @@ namespace asafov
           if (!parent)
           {
             current = nullptr;
+            return *this;
           }
+          // Move to parent's next element
+          index++;
+          if (index < parent->inner.pairCount)
+          {
+            return *this;
+          }
+          // Need to move up
+          current = parent;
+          parent = nullptr;
+          index = 0;
           return *this;
         }
 
-        if (parent)
+        if (current)
+        {
+          // Move to first child
+          if (!current->isLeaf && current->inner.pairCount > 0)
+          {
+            parent = current;
+            current = current->inner.children[0];
+            while (current && !current->isLeaf)
+            {
+              parent = current;
+              current = current->inner.children[0];
+            }
+            atLeaf = (current != nullptr);
+          }
+        }
+        else if (parent)
         {
           index++;
           if (index < parent->inner.pairCount)
           {
             return *this;
           }
-
-          // Move to next child
-          if (index <= parent->inner.pairCount)
-          {
-            current = parent->inner.children[index];
-            while (current && !current->isLeaf)
-            {
-              parent = current;
-              current = current->inner.children[0];
-              index = 0;
-            }
-            atLeaf = (current != nullptr);
-          }
-          else
-          {
-            current = nullptr;
-          }
+          // Need to move up
+          current = parent;
+          parent = nullptr;
+          index = 0;
         }
 
         return *this;
       }
 
+      bool operator==(const iterator& other) const
+      {
+        return current == other.current &&
+          parent == other.parent &&
+          index == other.index &&
+          atLeaf == other.atLeaf;
+      }
+
       bool operator!=(const iterator& other) const
       {
-        return current != other.current ||
-          parent != other.parent ||
-          index != other.index ||
-          atLeaf != other.atLeaf;
+        return !(*this == other);
+      }
+    };
+
+    class const_iterator
+    {
+    private:
+      const Node* current;
+      const Node* parent;
+      int index;
+      bool atLeaf;
+
+    public:
+      const_iterator(const Node* node = nullptr, const Node* p = nullptr, int i = 0, bool leaf = false)
+        : current(node), parent(p), index(i), atLeaf(leaf)
+      {
+      }
+
+      const_iterator(const iterator& it)
+        : current(it.current), parent(it.parent), index(it.index), atLeaf(it.atLeaf)
+      {
+      }
+
+      std::pair< const Key, const Value& > operator*() const
+      {
+        if (!current && !parent)
+        {
+          throw std::runtime_error("Dereferencing end iterator");
+        }
+        if (atLeaf)
+        {
+          return {current->leafPair.first, current->leafPair.second};
+        }
+        else if (parent)
+        {
+          return {parent->inner.pairs[index].first, parent->inner.pairs[index].second};
+        }
+        throw std::runtime_error("Invalid iterator state");
+      }
+
+      const_iterator& operator++()
+      {
+        if (!current && !parent) return *this;
+
+        if (atLeaf)
+        {
+          atLeaf = false;
+          if (!parent)
+          {
+            current = nullptr;
+            return *this;
+          }
+          // Move to parent's next element
+          index++;
+          if (index < parent->inner.pairCount)
+          {
+            return *this;
+          }
+          // Need to move up
+          current = parent;
+          parent = nullptr;
+          index = 0;
+          return *this;
+        }
+
+        if (current)
+        {
+          // Move to first child
+          if (!current->isLeaf && current->inner.pairCount > 0)
+          {
+            parent = current;
+            current = current->inner.children[0];
+            while (current && !current->isLeaf)
+            {
+              parent = current;
+              current = current->inner.children[0];
+            }
+            atLeaf = (current != nullptr);
+          }
+        }
+        else if (parent)
+        {
+          index++;
+          if (index < parent->inner.pairCount)
+          {
+            return *this;
+          }
+          // Need to move up
+          current = parent;
+          parent = nullptr;
+          index = 0;
+        }
+
+        return *this;
+      }
+
+      bool operator==(const const_iterator& other) const
+      {
+        return current == other.current &&
+          parent == other.parent &&
+          index == other.index &&
+          atLeaf == other.atLeaf;
+      }
+
+      bool operator!=(const const_iterator& other) const
+      {
+        return !(*this == other);
       }
     };
 
@@ -402,12 +527,32 @@ namespace asafov
         node = node->inner.children[0];
       }
 
-      return iterator(node, parent, 0, node != nullptr);
+      return iterator(node, parent, index, node != nullptr);
     }
 
     iterator end()
     {
       return iterator(nullptr);
+    }
+
+    const_iterator begin() const
+    {
+      const Node* node = root;
+      const Node* parent = nullptr;
+      int index = 0;
+
+      while (node && !node->isLeaf)
+      {
+        parent = node;
+        node = node->inner.children[0];
+      }
+
+      return const_iterator(node, parent, index, node != nullptr);
+    }
+
+    const_iterator end() const
+    {
+      return const_iterator(nullptr);
     }
 
     iterator find(const Key& key)
@@ -433,6 +578,51 @@ namespace asafov
           if (key == node->inner.pairs[i].first)
           {
             return iterator(nullptr, node, i, false);
+          }
+          if (key < node->inner.pairs[i].first)
+          {
+            parent = node;
+            node = node->inner.children[i];
+            index = i;
+            found = true;
+            break;
+          }
+        }
+
+        if (!found)
+        {
+          parent = node;
+          index = node->inner.pairCount;
+          node = node->inner.children[node->inner.pairCount];
+        }
+      }
+
+      return end();
+    }
+
+    const_iterator find(const Key& key) const
+    {
+      const Node* node = root;
+      const Node* parent = nullptr;
+      int index = 0;
+
+      while (node)
+      {
+        if (node->isLeaf)
+        {
+          if (node->leafPair.first == key)
+          {
+            return const_iterator(node, parent, index, true);
+          }
+          return end();
+        }
+
+        bool found = false;
+        for (int i = 0; i < node->inner.pairCount; ++i)
+        {
+          if (key == node->inner.pairs[i].first)
+          {
+            return const_iterator(nullptr, node, i, false);
           }
           if (key < node->inner.pairs[i].first)
           {
