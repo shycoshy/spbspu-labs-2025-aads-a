@@ -1,3 +1,5 @@
+#ifndef MAP_HPP
+#define MAP_HPP
 #include <memory>
 #include <utility>
 #include <functional>
@@ -69,25 +71,25 @@ namespace asafov
 
   public:
     // Конструкторы
-    TwoThreeMap() : node_count(0), comp(Compare()), alloc(NodeAllocator())
+    map() : node_count(0), comp(Compare()), alloc(NodeAllocator())
     {
       init_header();
     }
 
-    explicit TwoThreeMap(const Compare& comp, const Allocator& alloc = Allocator())
+    explicit map(const Compare& comp, const Allocator& alloc = Allocator())
       : node_count(0), comp(comp), alloc(alloc)
     {
       init_header();
     }
 
-    explicit TwoThreeMap(const Allocator& alloc)
+    explicit map(const Allocator& alloc)
       : node_count(0), comp(Compare()), alloc(alloc)
     {
       init_header();
     }
 
     template< class InputIt >
-    TwoThreeMap(InputIt first, InputIt last,
+    map(InputIt first, InputIt last,
                 const Compare& comp = Compare(),
                 const Allocator& alloc = Allocator())
       : node_count(0), comp(comp), alloc(alloc)
@@ -96,19 +98,19 @@ namespace asafov
       insert(first, last);
     }
 
-    TwoThreeMap(std::initializer_list< value_type > init,
+    map(std::initializer_list< value_type > init,
                 const Compare& comp = Compare(),
                 const Allocator& alloc = Allocator())
-      : TwoThreeMap(init.begin(), init.end(), comp, alloc)
+      : map(init.begin(), init.end(), comp, alloc)
     {
     }
 
-    ~TwoThreeMap()
+    ~map()
     {
       clear();
     }
 
-    TwoThreeMap& operator=(const TwoThreeMap& other)
+    map& operator=(const map& other)
     {
       if (this != &other)
       {
@@ -119,7 +121,7 @@ namespace asafov
       return *this;
     }
 
-    TwoThreeMap& operator=(std::initializer_list< value_type > ilist)
+    map& operator=(std::initializer_list< value_type > ilist)
     {
       clear();
       insert(ilist.begin(), ilist.end());
@@ -198,7 +200,7 @@ namespace asafov
       iterator it = find(key);
       if (it == end())
       {
-        throw std::out_of_range("TwoThreeMap::at");
+        throw std::out_of_range("map::at");
       }
       return it->second;
     }
@@ -208,7 +210,7 @@ namespace asafov
       const_iterator it = find(key);
       if (it == end())
       {
-        throw std::out_of_range("TwoThreeMap::at");
+        throw std::out_of_range("map::at");
       }
       return it->second;
     }
@@ -523,7 +525,7 @@ namespace asafov
       return 1;
     }
 
-    void swap(TwoThreeMap& other) noexcept
+    void swap(map& other) noexcept
     {
       std::swap(header, other.header);
       std::swap(node_count, other.node_count);
@@ -553,12 +555,12 @@ namespace asafov
     }
 
     template< typename K1, typename T1, typename C1, typename A1 >
-    friend bool operator==(const TwoThreeMap< K1, T1, C1, A1 >& lhs,
-                           const TwoThreeMap< K1, T1, C1, A1 >& rhs);
+    friend bool operator==(const map< K1, T1, C1, A1 >& lhs,
+                           const map< K1, T1, C1, A1 >& rhs);
 
     template< typename K1, typename T1, typename C1, typename A1 >
-    friend bool operator<(const TwoThreeMap< K1, T1, C1, A1 >& lhs,
-                          const TwoThreeMap< K1, T1, C1, A1 >& rhs);
+    friend bool operator<(const map< K1, T1, C1, A1 >& lhs,
+                          const map< K1, T1, C1, A1 >& rhs);
 
   private:
     // Внутренние методы
@@ -710,20 +712,20 @@ namespace asafov
 
   // Итератор
   template< typename Key, typename T, typename Compare, typename Allocator >
-  class TwoThreeMap< Key, T, Compare, Allocator >::iterator
+  class map< Key, T, Compare, Allocator >::iterator
   {
   public:
     using iterator_category = std::bidirectional_iterator_tag;
-    using value_type = TwoThreeMap::value_type;
-    using difference_type = TwoThreeMap::difference_type;
-    using pointer = TwoThreeMap::pointer;
-    using reference = TwoThreeMap::reference;
+    using value_type = map::value_type;
+    using difference_type = map::difference_type;
+    using pointer = map::pointer;
+    using reference = map::reference;
 
   private:
     Node* current;
     int index; // 0 для value1, 1 для value2
 
-    friend class TwoThreeMap;
+    friend class map;
     friend class const_iterator;
 
   public:
@@ -787,20 +789,20 @@ namespace asafov
 
   // Константный итератор
   template< typename Key, typename T, typename Compare, typename Allocator >
-  class TwoThreeMap< Key, T, Compare, Allocator >::const_iterator
+  class map< Key, T, Compare, Allocator >::const_iterator
   {
   public:
     using iterator_category = std::bidirectional_iterator_tag;
-    using value_type = TwoThreeMap::value_type;
-    using difference_type = TwoThreeMap::difference_type;
-    using pointer = TwoThreeMap::const_pointer;
-    using reference = TwoThreeMap::const_reference;
+    using value_type = map::value_type;
+    using difference_type = map::difference_type;
+    using pointer = map::const_pointer;
+    using reference = map::const_reference;
 
   private:
     const Node* current;
     int index; // 0 для value1, 1 для value2
 
-    friend class TwoThreeMap;
+    friend class map;
 
   public:
     const_iterator() : current(nullptr), index(0)
@@ -867,23 +869,23 @@ namespace asafov
 
   // Операторы сравнения
   template< typename Key, typename T, typename Compare, typename Allocator >
-  bool operator==(const TwoThreeMap< Key, T, Compare, Allocator >& lhs,
-                  const TwoThreeMap< Key, T, Compare, Allocator >& rhs)
+  bool operator==(const map< Key, T, Compare, Allocator >& lhs,
+                  const map< Key, T, Compare, Allocator >& rhs)
   {
     return lhs.size() == rhs.size() &&
       std::equal(lhs.begin(), lhs.end(), rhs.begin());
   }
 
   template< typename Key, typename T, typename Compare, typename Allocator >
-  bool operator!=(const TwoThreeMap< Key, T, Compare, Allocator >& lhs,
-                  const TwoThreeMap< Key, T, Compare, Allocator >& rhs)
+  bool operator!=(const map< Key, T, Compare, Allocator >& lhs,
+                  const map< Key, T, Compare, Allocator >& rhs)
   {
     return !(lhs == rhs);
   }
 
   template< typename Key, typename T, typename Compare, typename Allocator >
-  bool operator<(const TwoThreeMap< Key, T, Compare, Allocator >& lhs,
-                 const TwoThreeMap< Key, T, Compare, Allocator >& rhs)
+  bool operator<(const map< Key, T, Compare, Allocator >& lhs,
+                 const map< Key, T, Compare, Allocator >& rhs)
   {
     return std::lexicographical_compare(lhs.begin(), lhs.end(),
                                         rhs.begin(), rhs.end(),
@@ -891,31 +893,32 @@ namespace asafov
   }
 
   template< typename Key, typename T, typename Compare, typename Allocator >
-  bool operator<=(const TwoThreeMap< Key, T, Compare, Allocator >& lhs,
-                  const TwoThreeMap< Key, T, Compare, Allocator >& rhs)
+  bool operator<=(const map< Key, T, Compare, Allocator >& lhs,
+                  const map< Key, T, Compare, Allocator >& rhs)
   {
     return !(rhs < lhs);
   }
 
   template< typename Key, typename T, typename Compare, typename Allocator >
-  bool operator>(const TwoThreeMap< Key, T, Compare, Allocator >& lhs,
-                 const TwoThreeMap< Key, T, Compare, Allocator >& rhs)
+  bool operator>(const map< Key, T, Compare, Allocator >& lhs,
+                 const map< Key, T, Compare, Allocator >& rhs)
   {
     return rhs < lhs;
   }
 
   template< typename Key, typename T, typename Compare, typename Allocator >
-  bool operator>=(const TwoThreeMap< Key, T, Compare, Allocator >& lhs,
-                  const TwoThreeMap< Key, T, Compare, Allocator >& rhs)
+  bool operator>=(const map< Key, T, Compare, Allocator >& lhs,
+                  const map< Key, T, Compare, Allocator >& rhs)
   {
     return !(lhs < rhs);
   }
 
   // Специализация swap
   template< typename Key, typename T, typename Compare, typename Allocator >
-  void swap(TwoThreeMap< Key, T, Compare, Allocator >& lhs,
-            TwoThreeMap< Key, T, Compare, Allocator >& rhs) noexcept(noexcept(lhs.swap(rhs)))
+  void swap(map< Key, T, Compare, Allocator >& lhs,
+            map< Key, T, Compare, Allocator >& rhs) noexcept(noexcept(lhs.swap(rhs)))
   {
     lhs.swap(rhs);
   }
 }
+#endif
