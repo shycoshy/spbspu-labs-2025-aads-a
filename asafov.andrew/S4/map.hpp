@@ -13,7 +13,7 @@ namespace asafov
   {
     struct node
     {
-      node(Key k, Value v, node* p):
+      node(const Key& k, const Value& v, node* p):
         pair1(k, v),
         left(nullptr),
         middle(nullptr),
@@ -87,13 +87,13 @@ namespace asafov
           {
             if (Comparator()(k, where->pair1.first))
             {
-              std::swap(where->pair1.first, k);
-              std::swap(where->pair1.second, v);
+              std::swap(where->pair1.first, const_cast< Key& >(k));
+              std::swap(where->pair1.second, const_cast< Value& >(v));
             }
             else if (Comparator()(where->pair2.first, k))
             {
-              std::swap(where->pair2.first, k);
-              std::swap(where->pair2.second, v);
+              std::swap(where->pair2.first, const_cast< Key& >(k));
+              std::swap(where->pair2.second, const_cast< Value& >(v));
             }
             where = where->parent;
           }
@@ -101,13 +101,13 @@ namespace asafov
           {
             if (Comparator()(k, where->pair1.first))
             {
-              std::swap(where->pair1.first, k);
-              std::swap(where->pair1.second, v);
+              std::swap(where->pair1.first, const_cast< Key& >(k));
+              std::swap(where->pair1.second, const_cast< Value& >(v));
             }
             else if (Comparator()(where->pair2.first, k))
             {
-              std::swap(where->pair2.first, k);
-              std::swap(where->pair2.second, v);
+              std::swap(where->pair2.first, const_cast< Key& >(k));
+              std::swap(where->pair2.second, const_cast< Value& >(v));
             }
             node* temp = new node(k, v, nullptr);
             temp->left = new node(where->pair1.first, where->pair1.second, temp);
