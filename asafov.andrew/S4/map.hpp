@@ -191,6 +191,14 @@ namespace asafov
         return pos == 0 ? std::make_pair(current->key1, current->val1) : std::make_pair(current->key2, current->val2);
       }
 
+      const std::pair<const Key, Value>* operator->() const
+      {
+        if (!current) throw std::out_of_range("Dereferencing end iterator");
+        static std::pair<const Key, Value> temp;
+        temp = pos == 0 ? std::make_pair(current->key1, current->val1) : std::make_pair(current->key2, current->val2);
+        return &temp;
+      }
+
       const_iterator& operator++()
       {
         if (!current) return *this;
@@ -206,7 +214,7 @@ namespace asafov
           pos = 0;
           return *this;
         }
-        node* p = current;
+        const node* p = current;
         while (p->parent)
         {
           if (p->parent->left.get() == p)
