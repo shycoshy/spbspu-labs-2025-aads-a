@@ -70,7 +70,6 @@ namespace asafov
 
     void split(node* n, const Key& key, const Value& value)
     {
-      // Determine which key is the middle one
       Key keys[3] = {n->pair1.first, n->pair2.first, key};
       Value values[3] = {n->pair1.second, n->pair2.second, value};
 
@@ -524,7 +523,7 @@ namespace asafov
       iterator e = end();
       while (it != e)
       {
-        if ((*it).first == key)
+        if (it->first == key)
           return it;
         ++it;
       }
@@ -540,7 +539,7 @@ namespace asafov
       const_iterator e = cend();
       while (it != e)
       {
-        if ((*it).first == key)
+        if (it->first == key)
           return it;
         ++it;
       }
