@@ -12,7 +12,7 @@
 namespace asafov
 {
   template< class Key, class Value, class Comparator = std::less< Key > >
-  class Map
+  class map
   {
   private:
     struct Node
@@ -232,17 +232,17 @@ namespace asafov
       }
     };
 
-    Map() : root(nullptr), size_(0)
+    map() : root(nullptr), size_(0)
     {
     }
 
-    Map(std::initializer_list< std::pair< Key, Value > > init) : Map()
+    map(std::initializer_list< std::pair< Key, Value > > init) : map()
     {
       for (const auto& p: init)
         insert(p.first, p.second);
     }
 
-    ~Map()
+    ~map()
     {
       clear(root);
     }
@@ -308,7 +308,7 @@ namespace asafov
       Iterator it(root);
       while (it != end())
       {
-        if ((!comp(key, it->first) && !comp(it->first, key))
+        if ((!comp(key, it->first) && !comp(it->first, key)))
           return it;
         ++it;
       }
