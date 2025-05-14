@@ -216,7 +216,7 @@ namespace asafov
       }
 
     public:
-      iterator(node* root, bool end = false) : current(nullptr), use_second(false)
+      iterator(node* root = nullptr, bool end = false) : current(nullptr), use_second(false)
       {
         if (root && !end)
         {
@@ -229,11 +229,16 @@ namespace asafov
         }
       }
 
-      std::pair< const Key, Value >& operator*()
+      std::pair< const Key, Value >& operator*() const
       {
         return use_second
                  ? reinterpret_cast< std::pair< const Key, Value >& >(current->pair2)
                  : reinterpret_cast< std::pair< const Key, Value >& >(current->pair1);
+      }
+
+      std::pair< const Key, Value >* operator->() const
+      {
+        return &operator*();
       }
 
       iterator& operator++()
@@ -268,6 +273,97 @@ namespace asafov
       bool operator!=(const iterator& other) const
       {
         return current != other.current || use_second != other.use_second;
+      }
+
+      bool operator==(const iterator& other) const
+      {
+        return current == other.current && use_second == other.use_second;
+      }
+    };
+
+    class const_iterator
+    {
+    private:
+      std::queue< const node* > nodes;
+      const node* current;
+      bool use_second;
+
+      void traverse(const node* n)
+      {
+        if (!n) return;
+        traverse(n->left);
+        nodes.push(n);
+        if (n->is_three_node)
+        {
+          traverse(n->middle);
+          nodes.push(n); // For pair2
+        }
+        traverse(n->right);
+      }
+
+    public:
+      const_iterator(const node* root = nullptr, bool end = false) : current(nullptr), use_second(false)
+      {
+        if (root && !end)
+        {
+          traverse(root);
+          if (!nodes.empty())
+          {
+            current = nodes.front();
+            nodes.pop();
+          }
+        }
+      }
+
+      const std::pair< const Key, Value >& operator*() const
+      {
+        return use_second
+                 ? reinterpret_cast< const std::pair< const Key, Value >& >(current->pair2)
+                 : reinterpret_cast< const std::pair< const Key, Value >& >(current->pair1);
+      }
+
+      const std::pair< const Key, Value >* operator->() const
+      {
+        return &operator*();
+      }
+
+      const_iterator& operator++()
+      {
+        if (!nodes.empty())
+        {
+          if (current->is_three_node && !use_second)
+          {
+            use_second = true;
+          }
+          else
+          {
+            current = nodes.front();
+            nodes.pop();
+            use_second = false;
+          }
+        }
+        else
+        {
+          if (current->is_three_node && !use_second)
+          {
+            use_second = true;
+          }
+          else
+          {
+            current = nullptr;
+          }
+        }
+        return *this;
+      }
+
+      bool operator!=(const const_iterator& other) const
+      {
+        return current != other.current || use_second != other.use_second;
+      }
+
+      bool operator==(const const_iterator& other) const
+      {
+        return current == other.current && use_second == other.use_second;
       }
     };
 
@@ -332,6 +428,26 @@ namespace asafov
     iterator end()
     {
       return iterator(root, true);
+    }
+
+    const_iterator begin() const
+    {
+      return const_iterator(root);
+    }
+
+    const_iterator end() const
+    {
+      return const_iterator(root, true);
+    }
+
+    const_iterator cbegin() const
+    {
+      return const_iterator(root);
+    }
+
+    const_iterator cend() const
+    {
+      return const_iterator(root, true);
     }
 
     void insert(const Key& key, const Value& value)
@@ -415,11 +531,27 @@ namespace asafov
       return end();
     }
 
+    const_iterator find(const Key& key) const
+    {
+      const node* n = find_node(key);
+      if (!n) return cend();
+
+      const_iterator it = cbegin();
+      const_iterator e = cend();
+      while (it != e)
+      {
+        if ((*it).first == key)
+          return it;
+        ++it;
+      }
+      return cend();
+    }
+
     Value& operator[](const Key& key)
     {
       iterator it = find(key);
       if (it != end())
-        return (*it).second;
+        return it->second;
 
       insert(key, Value());
       return find(key)->second;
@@ -430,18 +562,15 @@ namespace asafov
       iterator it = find(key);
       if (it == end())
         throw std::out_of_range("Key not found");
-      return (*it).second;
+      return it->second;
     }
 
     const Value& at(const Key& key) const
     {
-      const node* n = find_node(key);
-      if (!n)
+      const_iterator it = find(key);
+      if (it == cend())
         throw std::out_of_range("Key not found");
-
-      if (key == n->pair1.first)
-        return n->pair1.second;
-      return n->pair2.second;
+      return it->second;
     }
 
     size_t size() const
