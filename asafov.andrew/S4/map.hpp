@@ -2,11 +2,10 @@
 #define MAP_HPP
 
 #include <utility>
-#include <cstddef>
-#include <vector>
 #include <stdexcept>
 #include <initializer_list>
 #include <queue>
+#include <vector>
 
 namespace asafov
 {
@@ -67,6 +66,132 @@ namespace asafov
           current = current->right;
       }
       return nullptr;
+    }
+
+    void split(node* n, const Key& key, const Value& value)
+    {
+      // Determine which key is the middle one
+      Key keys[3] = {n->pair1.first, n->pair2.first, key};
+      Value values[3] = {n->pair1.second, n->pair2.second, value};
+
+      // Sort keys and values
+      for (int i = 0; i < 2; i++)
+      {
+        for (int j = i + 1; j < 3; j++)
+        {
+          if (keys[i] > keys[j])
+          {
+            std::swap(keys[i], keys[j]);
+            std::swap(values[i], values[j]);
+          }
+        }
+      }
+
+      Key middle_key = keys[1];
+      Value middle_value = values[1];
+
+      if (!n->parent)
+      {
+        // Split root
+        node* new_root = new node(middle_key, middle_value);
+        node* left_child = new node(keys[0], values[0], new_root);
+        node* right_child = new node(keys[2], values[2], new_root);
+
+        new_root->left = left_child;
+        new_root->right = right_child;
+
+        // Reassign children
+        if (!n->is_leaf())
+        {
+          left_child->left = n->left;
+          left_child->right = n->middle;
+          right_child->left = n->right;
+
+          if (left_child->left) left_child->left->parent = left_child;
+          if (left_child->right) left_child->right->parent = left_child;
+          if (right_child->left) right_child->left->parent = right_child;
+        }
+
+        delete n;
+        root = new_root;
+      }
+      else
+      {
+        node* parent = n->parent;
+
+        if (!parent->is_three_node)
+        {
+          // Parent is 2-node
+          if (parent->left == n)
+          {
+            parent->pair2 = parent->pair1;
+            parent->pair1 = {middle_key, middle_value};
+            parent->is_three_node = true;
+
+            node* new_left = new node(keys[0], values[0], parent);
+            node* new_middle = new node(keys[2], values[2], parent);
+
+            new_left->left = n->left;
+            new_left->right = n->middle;
+            new_middle->left = n->right;
+
+            parent->left = new_left;
+            parent->middle = new_middle;
+
+            if (new_left->left) new_left->left->parent = new_left;
+            if (new_left->right) new_left->right->parent = new_left;
+            if (new_middle->left) new_middle->left->parent = new_middle;
+          }
+          else // parent->right == n
+          {
+            parent->pair2 = {middle_key, middle_value};
+            parent->is_three_node = true;
+
+            node* new_middle = new node(keys[0], values[0], parent);
+            node* new_right = new node(keys[2], values[2], parent);
+
+            new_middle->left = n->left;
+            new_middle->right = n->middle;
+            new_right->left = n->right;
+
+            parent->middle = new_middle;
+            parent->right = new_right;
+
+            if (new_middle->left) new_middle->left->parent = new_middle;
+            if (new_middle->right) new_middle->right->parent = new_middle;
+            if (new_right->left) new_right->left->parent = new_right;
+          }
+          delete n;
+        }
+        else
+        {
+          // Parent is 3-node - need to propagate split
+          node* temp = new node(middle_key, middle_value);
+          temp->is_three_node = true;
+          temp->pair2 = {keys[2], values[2]};
+
+          node* left = new node(keys[0], values[0], temp);
+          node* right = new node(keys[2], values[2], temp);
+
+          temp->left = left;
+          temp->right = right;
+
+          if (!n->is_leaf())
+          {
+            left->left = n->left;
+            left->right = n->middle;
+            right->left = n->right;
+
+            if (left->left) left->left->parent = left;
+            if (left->right) left->right->parent = left;
+            if (right->left) right->left->parent = right;
+          }
+
+          delete n;
+          split(parent, middle_key, middle_value);
+          delete temp;
+        }
+      }
     }
 
   public:
@@ -156,9 +281,47 @@ namespace asafov
         insert(p.first, p.second);
     }
 
+    map(const map& other) : map()
+    {
+      for (const auto& p: other)
+        insert(p.first, p.second);
+    }
+
+    map(map&& other) noexcept : root(other.root), size_(other.size_)
+    {
+      other.root = nullptr;
+      other.size_ = 0;
+    }
+
     ~map()
     {
       clear(root);
+    }
+
+    map& operator=(const map& other)
+    {
+      if (this != &other)
+      {
+        clear(root);
+        root = nullptr;
+        size_ = 0;
+        for (const auto& p: other)
+          insert(p.first, p.second);
+      }
+      return *this;
+    }
+
+    map& operator=(map&& other) noexcept
+    {
+      if (this != &other)
+      {
+        clear(root);
+        root = other.root;
+        size_ = other.size_;
+        other.root = nullptr;
+        other.size_ = 0;
+      }
+      return *this;
     }
 
     iterator begin()
@@ -183,12 +346,34 @@ namespace asafov
       node* current = root;
       while (!current->is_leaf())
       {
+        if (key == current->pair1.first ||
+          (current->is_three_node && key == current->pair2.first))
+        {
+          // Key already exists - update value
+          if (key == current->pair1.first)
+            current->pair1.second = value;
+          else
+            current->pair2.second = value;
+          return;
+        }
+
         if (key < current->pair1.first)
           current = current->left;
         else if (!current->is_three_node || key < current->pair2.first)
           current = current->middle;
         else
           current = current->right;
+      }
+
+      // Check if key already exists in leaf
+      if (key == current->pair1.first ||
+        (current->is_three_node && key == current->pair2.first))
+      {
+        if (key == current->pair1.first)
+          current->pair1.second = value;
+        else
+          current->pair2.second = value;
+        return;
       }
 
       if (!current->is_three_node)
@@ -208,11 +393,8 @@ namespace asafov
       }
       else
       {
-        // Need to split node (simplified)
-        // In real implementation you would need proper splitting logic
-        node* new_node = new node(key, value);
-        // Temporary solution - just mark for rebuild
-        // In complete implementation you would restructure the tree
+        // Need to split node
+        split(current, key, value);
         size_++;
       }
     }
@@ -277,6 +459,12 @@ namespace asafov
       clear(root);
       root = nullptr;
       size_ = 0;
+    }
+
+    void swap(map& other) noexcept
+    {
+      std::swap(root, other.root);
+      std::swap(size_, other.size_);
     }
   };
 }
