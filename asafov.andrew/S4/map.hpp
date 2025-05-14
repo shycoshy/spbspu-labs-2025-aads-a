@@ -25,7 +25,7 @@ namespace asafov
 
       node(const Key& k, const Value& v, node* p = nullptr) :
         left(nullptr), middle(nullptr), right(nullptr),
-        parent(p), pair1(k, v), is_three_node(false)
+        parent(p), pair1(k, v), pair2(), is_three_node(false)
       {
       }
 
@@ -104,10 +104,10 @@ namespace asafov
         {
           left_child->left = n->left;
           left_child->right = n->middle;
-          right_child->left = n->right;
-
           if (left_child->left) left_child->left->parent = left_child;
           if (left_child->right) left_child->right->parent = left_child;
+
+          right_child->left = n->right;
           if (right_child->left) right_child->left->parent = right_child;
         }
 
@@ -165,15 +165,40 @@ namespace asafov
         else
         {
           // Parent is 3-node - need to propagate split
-          node* temp = new node(middle_key, middle_value);
-          temp->is_three_node = true;
-          temp->pair2 = {keys[2], values[2]};
+          Key parent_keys[3];
+          Value parent_values[3];
 
-          node* left = new node(keys[0], values[0], temp);
-          node* right = new node(keys[2], values[2], temp);
+          if (parent->left == n)
+          {
+            parent_keys[0] = middle_key;
+            parent_values[0] = middle_value;
+            parent_keys[1] = parent->pair1.first;
+            parent_values[1] = parent->pair1.second;
+            parent_keys[2] = parent->pair2.first;
+            parent_values[2] = parent->pair2.second;
+          }
+          else if (parent->middle == n)
+          {
+            parent_keys[0] = parent->pair1.first;
+            parent_values[0] = parent->pair1.second;
+            parent_keys[1] = middle_key;
+            parent_values[1] = middle_value;
+            parent_keys[2] = parent->pair2.first;
+            parent_values[2] = parent->pair2.second;
+          }
+          else // parent->right == n
+          {
+            parent_keys[0] = parent->pair1.first;
+            parent_values[0] = parent->pair1.second;
+            parent_keys[1] = parent->pair2.first;
+            parent_values[1] = parent->pair2.second;
+            parent_keys[2] = middle_key;
+            parent_values[2] = middle_value;
+          }
 
-          temp->left = left;
-          temp->right = right;
+          // Create new nodes for the split
+          node* left = new node(keys[0], values[0]);
+          node* right = new node(keys[2], values[2]);
 
           if (!n->is_leaf())
           {
@@ -186,9 +211,56 @@ namespace asafov
             if (right->left) right->left->parent = right;
           }
 
+          // Store children pointers before splitting parent
+          node* children[4];
+          if (parent->left == n)
+          {
+            children[0] = left;
+            children[1] = right;
+            children[2] = parent->middle;
+            children[3] = parent->right;
+          }
+          else if (parent->middle == n)
+          {
+            children[0] = parent->left;
+            children[1] = left;
+            children[2] = right;
+            children[3] = parent->right;
+          }
+          else // parent->right == n
+          {
+            children[0] = parent->left;
+            children[1] = parent->middle;
+            children[2] = left;
+            children[3] = right;
+          }
+
+          // Now split the parent
           delete n;
-          split(parent, middle_key, middle_value);
-          delete temp;
+          clear(parent->left);
+          clear(parent->middle);
+          clear(parent->right);
+          parent->left = parent->middle = parent->right = nullptr;
+          parent->is_three_node = false;
+
+          split(parent, parent_keys[1], parent_values[1]);
+
+          // Reattach children
+          node* new_parent = find_node(parent_keys[1]);
+          if (!new_parent) new_parent = root;
+
+          if (new_parent->left && new_parent->left->is_leaf())
+          {
+            new_parent->left->left = children[0];
+            new_parent->left->right = children[1];
+            new_parent->right->left = children[2];
+            new_parent->right->right = children[3];
+
+            if (children[0]) children[0]->parent = new_parent->left;
+            if (children[1]) children[1]->parent = new_parent->left;
+            if (children[2]) children[2]->parent = new_parent->right;
+            if (children[3]) children[3]->parent = new_parent->right;
+          }
         }
       }
     }
@@ -209,7 +281,6 @@ namespace asafov
         if (n->is_three_node)
         {
           traverse(n->middle);
-          nodes.push(n); // For pair2
         }
         traverse(n->right);
       }
@@ -230,9 +301,9 @@ namespace asafov
 
       std::pair< const Key, Value >& operator*() const
       {
-        return use_second
-                 ? reinterpret_cast< std::pair< const Key, Value >& >(current->pair2)
-                 : reinterpret_cast< std::pair< const Key, Value >& >(current->pair1);
+        if (use_second && current->is_three_node)
+          return reinterpret_cast< std::pair< const Key, Value >& >(current->pair2);
+        return reinterpret_cast< std::pair< const Key, Value >& >(current->pair1);
       }
 
       std::pair< const Key, Value >* operator->() const
@@ -242,24 +313,17 @@ namespace asafov
 
       iterator& operator++()
       {
-        if (!nodes.empty())
+        if (current->is_three_node && !use_second)
         {
-          if (current->is_three_node && !use_second)
-          {
-            use_second = true;
-          }
-          else
+          use_second = true;
+        }
+        else
+        {
+          if (!nodes.empty())
           {
             current = nodes.front();
             nodes.pop();
             use_second = false;
-          }
-        }
-        else
-        {
-          if (current->is_three_node && !use_second)
-          {
-            use_second = true;
           }
           else
           {
@@ -271,12 +335,12 @@ namespace asafov
 
       bool operator!=(const iterator& other) const
       {
-        return current != other.current || use_second != other.use_second;
+        return current != other.current || (current && use_second != other.use_second);
       }
 
       bool operator==(const iterator& other) const
       {
-        return current == other.current && use_second == other.use_second;
+        return current == other.current && (!current || use_second == other.use_second);
       }
     };
 
@@ -295,7 +359,6 @@ namespace asafov
         if (n->is_three_node)
         {
           traverse(n->middle);
-          nodes.push(n); // For pair2
         }
         traverse(n->right);
       }
@@ -316,9 +379,9 @@ namespace asafov
 
       const std::pair< const Key, Value >& operator*() const
       {
-        return use_second
-                 ? reinterpret_cast< const std::pair< const Key, Value >& >(current->pair2)
-                 : reinterpret_cast< const std::pair< const Key, Value >& >(current->pair1);
+        if (use_second && current->is_three_node)
+          return reinterpret_cast< const std::pair< const Key, Value >& >(current->pair2);
+        return reinterpret_cast< const std::pair< const Key, Value >& >(current->pair1);
       }
 
       const std::pair< const Key, Value >* operator->() const
@@ -328,24 +391,17 @@ namespace asafov
 
       const_iterator& operator++()
       {
-        if (!nodes.empty())
+        if (current->is_three_node && !use_second)
         {
-          if (current->is_three_node && !use_second)
-          {
-            use_second = true;
-          }
-          else
+          use_second = true;
+        }
+        else
+        {
+          if (!nodes.empty())
           {
             current = nodes.front();
             nodes.pop();
             use_second = false;
-          }
-        }
-        else
-        {
-          if (current->is_three_node && !use_second)
-          {
-            use_second = true;
           }
           else
           {
@@ -357,12 +413,12 @@ namespace asafov
 
       bool operator!=(const const_iterator& other) const
       {
-        return current != other.current || use_second != other.use_second;
+        return current != other.current || (current && use_second != other.use_second);
       }
 
       bool operator==(const const_iterator& other) const
       {
-        return current == other.current && use_second == other.use_second;
+        return current == other.current && (!current || use_second == other.use_second);
       }
     };
 
@@ -426,7 +482,7 @@ namespace asafov
 
     iterator end()
     {
-      return iterator(root, true);
+      return iterator(nullptr, true);
     }
 
     const_iterator begin() const
@@ -436,7 +492,7 @@ namespace asafov
 
     const_iterator end() const
     {
-      return const_iterator(root, true);
+      return const_iterator(nullptr, true);
     }
 
     const_iterator cbegin() const
@@ -446,7 +502,7 @@ namespace asafov
 
     const_iterator cend() const
     {
-      return const_iterator(root, true);
+      return const_iterator(nullptr, true);
     }
 
     void insert(const Key& key, const Value& value)
@@ -519,14 +575,11 @@ namespace asafov
       node* n = find_node(key);
       if (!n) return end();
 
-      iterator it = begin();
-      iterator e = end();
-      while (it != e)
-      {
-        if (it->first == key)
-          return it;
-        ++it;
-      }
+      if (n->pair1.first == key)
+        return iterator(n, false);
+      else if (n->is_three_node && n->pair2.first == key)
+        return iterator(n, true);
+
       return end();
     }
 
@@ -535,14 +588,11 @@ namespace asafov
       const node* n = find_node(key);
       if (!n) return cend();
 
-      const_iterator it = cbegin();
-      const_iterator e = cend();
-      while (it != e)
-      {
-        if (it->first == key)
-          return it;
-        ++it;
-      }
+      if (n->pair1.first == key)
+        return const_iterator(n, false);
+      else if (n->is_three_node && n->pair2.first == key)
+        return const_iterator(n, true);
+
       return cend();
     }
 
