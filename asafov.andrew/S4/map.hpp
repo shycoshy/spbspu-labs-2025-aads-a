@@ -38,7 +38,7 @@ namespace asafov
       node* where = root_;
       while (where->left)
       {
-        if (where->type)
+        if (where->isThreeNode)
         {
           if (a_less_then_b(where->pair1.first, k))
           {
@@ -176,7 +176,7 @@ namespace asafov
       {
         return where->pair1.second;
       }
-      else if (where->type)
+      else if (where->isThreeNode)
       {
         if (a_equal_b(where->pair2.first, k))
         {
@@ -224,6 +224,7 @@ namespace asafov
 
     class iterator
     {
+      friend class map;
     public:
       iterator(node* root)
       {
