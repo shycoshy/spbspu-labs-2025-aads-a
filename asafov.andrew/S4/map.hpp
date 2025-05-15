@@ -61,7 +61,7 @@ namespace asafov
           }
           else
           {
-            where = where->rigth;
+            where = where->right;
           }
         }
       }
@@ -183,7 +183,7 @@ namespace asafov
           return where->pair2.second;
         }
       }
-      return Value();
+      return root_->pair1.second;
     }
 
     Value& at(const Key& k)
