@@ -221,6 +221,7 @@ namespace asafov
     {
       return size_ == 0;
     }
+
     class iterator
     {
     public:
@@ -294,22 +295,7 @@ namespace asafov
     {
       return iterator(nullptr);
     }
-
-    // Const версия итератора
-    class const_iterator
-    {
-      // Аналогично iterator, но с const методами
-    };
-
-    const_iterator begin() const
-    {
-      return const_iterator(root_);
-    }
-
-    const_iterator end() const
-    {
-      return const_iterator(nullptr);
-    }
+    
     iterator find(const Key& key)
     {
       iterator it = begin();
@@ -334,32 +320,6 @@ namespace asafov
       }
       return end_it;
     }
-
-    const_iterator find(const Key& key) const
-    {
-      const_iterator it = begin();
-      const_iterator end_it = end();
-
-      while (it != end_it)
-      {
-        if (!a_less_then_b(it->first, key) && !a_less_then_b(key, it->first))
-        {
-          return it;
-        }
-        // Для 3-узлов проверяем оба ключа
-        if (it.stack_.back()->isThreeNode)
-        {
-          if (!a_less_then_b(it.stack_.back()->pair2.first, key) &&
-            !a_less_then_b(key, it.stack_.back()->pair2.first))
-          {
-            return it;
-          }
-        }
-        ++it;
-      }
-      return end_it;
-    }
-
   private:
     node* root_;
     size_t size_;
