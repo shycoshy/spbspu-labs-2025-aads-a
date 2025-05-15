@@ -233,12 +233,12 @@ namespace asafov
         }
       }
 
-      std::pair<const Key, Value>& operator*()
+      std::pair< const Key, Value >& operator*()
       {
         return stack_.back()->pair1;
       }
 
-      std::pair<const Key, Value>* operator->()
+      std::pair< const Key, Value >* operator->()
       {
         return &stack_.back()->pair1;
       }
@@ -283,7 +283,7 @@ namespace asafov
         }
       }
 
-      std::deque<node*> stack_;
+      std::deque< node* > stack_;
     };
 
     iterator begin()
@@ -295,7 +295,7 @@ namespace asafov
     {
       return iterator(nullptr);
     }
-    
+
     iterator find(const Key& key)
     {
       iterator it = begin();
@@ -320,6 +320,7 @@ namespace asafov
       }
       return end_it;
     }
+
   private:
     node* root_;
     size_t size_;
