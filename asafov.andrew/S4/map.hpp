@@ -47,11 +47,11 @@ namespace asafov
       {
         if (where->type)
         {
-          if (Comparator(where->pair1.first, k))
+          if (a_less_then_b(where->pair1.first, k))
           {
             where = where->left;
           }
-          else if (Comparator(k, where->pair2.first))
+          else if (a_less_then_b(k, where->pair2.first))
           {
             where = where->right;
           }
@@ -62,7 +62,7 @@ namespace asafov
         }
         else
         {
-          if (Comparator(where->pair1.first, k))
+          if (a_less_then_b(where->pair1.first, k))
           {
             where = where->left;
           }
@@ -78,6 +78,11 @@ namespace asafov
     bool a_less_then_b(Key a, Key b)
     {
       return a < b;
+    }
+
+    bool a_equal_b(Key a, Key b)
+    {
+      return a == b;
     }
 
   public:
@@ -176,13 +181,13 @@ namespace asafov
     Value& operator[](const Key& k)
     {
       node* where = find_approximately(k);
-      if (Comparator(where->pair1.first, k) && Comparator(k, where->pair1.first))
+      if (a_equal_b(where->pair1.first, k))
       {
         return where->pair1.second;
       }
       else if (where->type)
       {
-        if (Comparator(where->pair2.first, k) && Comparator(k, where->pair2.first))
+        if (a_equal_b(where->pair2.first, k))
         {
           return where->pair2.second;
         }
@@ -307,15 +312,14 @@ namespace asafov
 
       while (it != end_it)
       {
-        if (!a_less_then_b(it->first, key) && !a_less_then_b(key, it->first))
+        if (a_equal_b(it->first, key))
         {
           return it;
         }
         // Для 3-узлов проверяем оба ключа
         if (it.stack_.back()->isThreeNode)
         {
-          if (!a_less_then_b(it.stack_.back()->pair2.first, key) &&
-            !a_less_then_b(key, it.stack_.back()->pair2.first))
+          if (a_equal_b(it.stack_.back()->pair2.first, key))
           {
             return it;
           }
