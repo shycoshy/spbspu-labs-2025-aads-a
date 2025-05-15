@@ -22,13 +22,6 @@ namespace asafov
       {
         pair1 = std::make_pair(k, v);
       }
-
-      ~node()
-      {
-        ~pair1;
-        ~pair2;
-      }
-
       node* left;
       node* middle;
       node* right;
@@ -133,7 +126,6 @@ namespace asafov
           }
           std::swap(temp, where->pair2);
           where->isThreeNode = true;
-          ~temp;
           break;
         }
         if (where->isThreeNode && where->parent)
@@ -162,7 +154,6 @@ namespace asafov
           root_->right = tr;
           tl = nullptr;
           tr = nullptr;
-          ~temp;
           break;
         }
       }
