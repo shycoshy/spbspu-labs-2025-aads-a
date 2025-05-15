@@ -87,6 +87,10 @@ namespace asafov
     {
     }
 
+    ~map()
+    {
+      clear();
+    }
     void insert(const Key& k, Value& v)
     {
       if (!root_)
