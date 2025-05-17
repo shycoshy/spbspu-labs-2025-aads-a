@@ -4,6 +4,7 @@
 #include <utility>
 #include <cstddef>
 #include <deque>
+#include <stdexcept>
 
 namespace asafov
 {
@@ -43,8 +44,9 @@ namespace asafov
       }
     };
 
-    InsertResult insert(Node* node, const Key& key, const Value& value)
+    InsertResult insert(Node* node, const Key& key, const Value& value, int depth = 0)
     {
+      if (depth > 1000) throw std::runtime_error("Stack overflow likely due to infinite recursion");
       if (!node)
       {
         return {new Node(key, value), Key(), Value(), true};
@@ -110,7 +112,7 @@ namespace asafov
         InsertResult ir;
 
         if (key < node->key1)
-          ir = insert(node->left, key, value);
+          ir = insert(node->left, key, value, depth + 1);
         else if (node->isTwoNode || key < node->key2)
           ir = insert(node->middle, key, value);
         else
@@ -262,8 +264,7 @@ namespace asafov
 
       iterator(Node* root)
       {
-        map temp;
-        temp.inorder(root, elements);
+        inorder(root, elements);
         current = elements.begin();
       }
 
