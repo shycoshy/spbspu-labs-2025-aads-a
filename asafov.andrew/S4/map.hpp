@@ -2,330 +2,283 @@
 #define MAP_HPP
 
 #include <utility>
-#include <stdexcept>
-#include <vector>
-#include <deque>
+#include <cstddef>
+#include <cassert>
 
 namespace asafov
 {
-  template< class Key, class Value >
+  template< typename Key, typename Value >
   class map
   {
-    struct node
+  private:
+    struct Node
     {
-      node(const Key& k, Value& v, node* p = nullptr):
-        left(nullptr),
-        middle(nullptr),
-        right(nullptr),
-        parent(p),
-        isThreeNode(false)
+      bool isTwoNode;
+      Key key1, key2;
+      Value value1, value2;
+      Node* left;
+      Node* middle;
+      Node* right;
+
+      Node(const Key& k, const Value& v)
+        : isTwoNode(true), key1(k), value1(v),
+          left(nullptr), middle(nullptr), right(nullptr)
       {
-        pair1 = std::make_pair(k, v);
       }
-      node* left;
-      node* middle;
-      node* right;
-      node* parent;
-      std::pair< const Key, Value > pair1;
-      std::pair< const Key, Value > pair2;
-      bool isThreeNode;
-      bool pair2Processed = false;
     };
 
+    Node* root;
+    std::size_t size_;
 
-    node* find_approximately(const Key& k)
+    struct InsertResult
     {
-      node* where = root_;
-      while (where->left)
+      Node* newChild;
+      Key promotedKey;
+      Value promotedValue;
+      bool wasSplit;
+    };
+
+    // Вставка с балансировкой
+    InsertResult insert(Node* node, const Key& key, const Value& value)
+    {
+      if (!node)
       {
-        if (where->isThreeNode)
+        return {new Node(key, value), Key(), Value(), true};
+      }
+
+      if (node->isTwoNode)
+      {
+        if (!node->left)
         {
-          if (a_less_then_b(where->pair1.first, k))
+          // Лист, преобразуем в 3-узел
+          if (key < node->key1)
           {
-            where = where->left;
-          }
-          else if (a_less_then_b(k, where->pair2.first))
-          {
-            where = where->right;
+            node->key2 = node->key1;
+            node->value2 = node->value1;
+            node->key1 = key;
+            node->value1 = value;
           }
           else
           {
-            where = where->middle;
+            node->key2 = key;
+            node->value2 = value;
           }
+          node->isTwoNode = false;
+          ++size_;
+          return {nullptr, Key(), Value(), false};
         }
         else
         {
-          if (a_less_then_b(where->pair1.first, k))
+          // Рекурсивная вставка
+          InsertResult ir;
+          if (key < node->key1) ir = insert(node->left, key, value);
+          else ir = insert(node->middle, key, value);
+
+          if (ir.wasSplit)
           {
-            where = where->left;
+            Node* newNode = new Node(ir.promotedKey, ir.promotedValue);
+            newNode->isTwoNode = false;
+            if (key < node->key1)
+            {
+              newNode->left = ir.newChild;
+              newNode->middle = node;
+            }
+            else
+            {
+              newNode->left = node;
+              newNode->middle = ir.newChild;
+            }
+            return {newNode, node->key1, node->value1, true};
           }
-          else
-          {
-            where = where->right;
-          }
+          return {nullptr, Key(), Value(), false};
         }
       }
-      return where;
+      else
+      {
+        // Расщепляем 3-узел
+        Node* newNode = new Node(Key(), Value());
+        Key midKey;
+        Value midValue;
+        if (key < node->key1)
+        {
+          midKey = node->key1;
+          midValue = node->value1;
+          newNode->key1 = node->key2;
+          newNode->value1 = node->value2;
+          node->key1 = key;
+          node->value1 = value;
+        }
+        else if (key < node->key2)
+        {
+          midKey = key;
+          midValue = value;
+          newNode->key1 = node->key2;
+          newNode->value1 = node->value2;
+        }
+        else
+        {
+          midKey = node->key2;
+          midValue = node->value2;
+          newNode->key1 = key;
+          newNode->value1 = value;
+        }
+        node->isTwoNode = true;
+        ++size_;
+        return {newNode, midKey, midValue, true};
+      }
     }
 
-    bool a_less_then_b(Key a, Key b)
+    Node* findNode(Node* node, const Key& key) const
     {
-      return a < b;
+      if (!node) return nullptr;
+      if (key == node->key1) return node;
+      if (!node->isTwoNode && key == node->key2) return node;
+      if (key < node->key1) return findNode(node->left, key);
+      if (node->isTwoNode || key < node->key2) return findNode(node->middle, key);
+      return findNode(node->right, key);
     }
 
-    bool a_equal_b(Key a, Key b)
+    void destroy(Node* node)
     {
-      return a == b;
+      if (!node) return;
+      destroy(node->left);
+      destroy(node->middle);
+      destroy(node->right);
+      delete node;
     }
 
   public:
-    map():
-      root_(nullptr),
-      size_(0)
+    map() : root(nullptr), size_(0)
     {
     }
 
     ~map()
     {
-      clear();
-    }
-    void insert(const Key& k, Value& v)
-    {
-      if (!root_)
-      {
-        root_ = new node{nullptr, nullptr, nullptr, nullptr, std::make_pair(k, v), std::make_pair(k, v), false};
-        deletes_.push_back(root_);
-        return;
-      }
-      std::pair< const Key, Value > temp = std::make_pair(k, v);
-      node* where = root_;
-      //ищем куда вставить
-      while (where->left)
-      {
-        if (a_less_then_b(temp.first, where->pair1.first))
-        {
-          where = where->left;
-        }
-        else if (a_less_then_b(temp.first, where->pair2.first) && where->isThreeNode)
-        {
-          where = where->middle;
-        }
-        else
-        {
-          where = where->right;
-        }
-      }
-      //проверям ноду
-      while (true)
-      {
-        if (!where->isThreeNode)
-        {
-          if (a_less_then_b(temp.first, where->pair1.first))
-          {
-            std::swap(where->pair1, where->pair2);
-          }
-          std::swap(temp, where->pair2);
-          where->isThreeNode = true;
-          break;
-        }
-        if (where->isThreeNode && where->parent)
-        {
-          if (a_less_then_b(temp.first, where->pair1.first))
-          {
-            std::swap(where->pair1, temp);
-          }
-          if (a_less_then_b(where->pair2.first), temp.first)
-          {
-            std::swap(where->pair2, temp);
-          }
-          where = where->parent;
-        }
-        else //root-переполнение
-        {
-          //left, middle, right, parent, pair1, pair2, isThreeNode
-          node* tl = new node{root_->left, nullptr, root_->middle->left, root_, root_->pair1, root_->pair1, false};
-          deletes_.push_back(tl);
-          node* tr = new node{root_->right, nullptr, root_->middle->right, root_, root_->pair2, root_->pair2, false};
-          deletes_.push_back(tr);
-          std::swap(temp, root_->pair1);
-          root_->isThreeNode = false;
-          root_->middle = nullptr;
-          root_->left = tl;
-          root_->right = tr;
-          tl = nullptr;
-          tr = nullptr;
-          break;
-        }
-      }
-    }
-
-    void clear()
-    {
-      while (!deletes_.empty())
-      {
-        delete deletes_.front();
-        deletes_.pop_front();
-      }
-    }
-
-
-    Value& operator[](const Key& k)
-    {
-      node* where = find_approximately(k);
-      if (a_equal_b(where->pair1.first, k))
-      {
-        return where->pair1.second;
-      }
-      else if (where->isThreeNode)
-      {
-        if (a_equal_b(where->pair2.first, k))
-        {
-          return where->pair2.second;
-        }
-      }
-      return root_->pair1.second;
-    }
-
-    Value& at(const Key& k)
-    {
-      Value& temp = operator[](k);
-      if (temp != Value())
-      {
-        throw std::out_of_range("key not found!");
-      }
-      return temp;
-    }
-
-    const Value& at(const Key& k) const
-    {
-      Value& temp = operator[](k);
-      if (temp != Value())
-      {
-        throw std::out_of_range("key not found!");
-      }
-      return temp;
-    }
-
-    void swap(map& other) noexcept
-    {
-      std::swap(root_, other->root_);
-      std::swap(size_, other->size_);
-    }
-
-    size_t size() const noexcept
-    {
-      return size_;
-    }
-
-    bool empty() const noexcept
-    {
-      return size_ == 0;
+      destroy(root);
     }
 
     class iterator
     {
-      friend class map;
-    public:
-      iterator(node* root)
+      // минимальный итератор для begin() и end()
+      using pair_t = std::pair< const Key, Value >;
+
+      struct StackNode
       {
-        if (root)
+        Node* node;
+        bool firstDone;
+        bool secondDone;
+      };
+
+      StackNode stack[64];
+      int top;
+      pair_t current;
+
+      void pushLeft(Node* node)
+      {
+        while (node)
         {
-          traverseLeft(root);
+          stack[++top] = {node, false, false};
+          node = node->left;
         }
       }
 
-      std::pair< const Key, Value >& operator*()
+    public:
+      iterator() : top(-1)
       {
-        return stack_.back()->pair1;
       }
 
-      std::pair< const Key, Value >* operator->()
+      iterator(Node* root) : top(-1)
       {
-        return &stack_.back()->pair1;
+        pushLeft(root);
+        ++(*this);
       }
 
       iterator& operator++()
       {
-        node* current = stack_.back();
-        stack_.pop_back();
-
-        // Если есть правое поддерево, идем в него
-        if (current->right)
+        while (top >= 0)
         {
-          traverseLeft(current->right);
+          auto& sn = stack[top];
+          if (!sn.firstDone)
+          {
+            current = {sn.node->key1, sn.node->value1};
+            sn.firstDone = true;
+            pushLeft(sn.node->middle);
+            return *this;
+          }
+          else if (!sn.node->isTwoNode && !sn.secondDone)
+          {
+            current = {sn.node->key2, sn.node->value2};
+            sn.secondDone = true;
+            pushLeft(sn.node->right);
+            return *this;
+          }
+          else
+          {
+            --top;
+          }
         }
-        // Если это 3-узел и мы обработали только pair1
-        else if (current->isThreeNode && !current->pair2Processed)
-        {
-          current->pair2Processed = true;
-          stack_.push_back(current);
-        }
-
+        current = pair_t();
         return *this;
+      }
+
+      const pair_t& operator*() const
+      {
+        return current;
+      }
+
+      const pair_t* operator->() const
+      {
+        return &current;
       }
 
       bool operator!=(const iterator& other) const
       {
-        return !stack_.empty() || !other.stack_.empty();
+        return top != other.top;
       }
-
-    private:
-      void traverseLeft(node* n)
-      {
-        while (n)
-        {
-          stack_.push_back(n);
-          n = n->left;
-        }
-        // Помечаем, что pair1 будет обработан первым
-        if (!stack_.empty())
-        {
-          stack_.back()->pair2Processed = false;
-        }
-      }
-
-      std::deque< node* > stack_;
     };
 
-    iterator begin()
+    iterator begin() const
     {
-      return iterator(root_);
+      return iterator(root);
     }
 
-    iterator end()
+    iterator end() const
     {
-      return iterator(nullptr);
+      return iterator(); // пустой
     }
 
-    iterator find(const Key& key)
+    bool empty() const
     {
-      iterator it = begin();
-      iterator end_it = end();
+      return size_ == 0;
+    }
 
-      while (it != end_it)
+    iterator find(const Key& key) const
+    {
+      Node* found = findNode(root, key);
+      if (!found) return end();
+      map temp;
+      temp.root = found;
+      return temp.begin();
+    }
+
+    Value& operator[](const Key& key)
+    {
+      Node* node = findNode(root, key);
+      if (!node)
       {
-        if (a_equal_b(it->first, key))
+        auto result = insert(root, key, Value{});
+        if (result.wasSplit)
         {
-          return it;
+          root = new Node(result.promotedKey, result.promotedValue);
+          root->isTwoNode = false;
+          root->left = result.newChild;
+          root->middle = root; // old root
         }
-        // Для 3-узлов проверяем оба ключа
-        if (it.stack_.back()->isThreeNode)
-        {
-          if (a_equal_b(it.stack_.back()->pair2.first, key))
-          {
-            return it;
-          }
-        }
-        ++it;
+        node = findNode(root, key);
       }
-      return end_it;
+      return key == node->key1 ? node->value1 : node->value2;
     }
-
-  private:
-    node* root_;
-    size_t size_;
-    std::deque< node* > deletes_;
   };
-}
+} // namespace asafov
 
-#endif
+#endif // MAP_HPP
