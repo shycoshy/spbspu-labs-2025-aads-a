@@ -264,7 +264,8 @@ namespace asafov
 
       iterator(Node* root)
       {
-        inorder(root, elements);
+        map temp;
+        temp.inorder(root, elements);
         current = elements.begin();
       }
 
