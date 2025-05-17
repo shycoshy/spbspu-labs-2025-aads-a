@@ -213,6 +213,8 @@ namespace asafov
       }
     };
 
+    using const_iterator = iterator;
+
     iterator begin() const
     {
       return iterator(root);
@@ -223,9 +225,24 @@ namespace asafov
       return iterator();
     }
 
+    const_iterator cbegin() const
+    {
+      return iterator(root);
+    }
+
+    const_iterator cend() const
+    {
+      return iterator();
+    }
+
     bool empty() const
     {
       return size_ == 0;
+    }
+
+    std::size_t size() const
+    {
+      return size_;
     }
 
     iterator find(const Key& key) const
