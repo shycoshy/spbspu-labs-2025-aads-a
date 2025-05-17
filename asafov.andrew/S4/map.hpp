@@ -35,6 +35,12 @@ namespace asafov
       Key promotedKey;
       Value promotedValue;
       bool wasSplit;
+      Node* rightChild;
+
+      InsertResult(Node* n = nullptr, Key k = Key(), Value v = Value(), bool s = false, Node* r = nullptr)
+        : newChild(n), promotedKey(k), promotedValue(v), wasSplit(s), rightChild(r)
+      {
+      }
     };
 
     InsertResult insert(Node* node, const Key& key, const Value& value)
@@ -44,9 +50,9 @@ namespace asafov
         return {new Node(key, value), Key(), Value(), true};
       }
 
-      if (node->isTwoNode)
+      if (!node->left)
       {
-        if (!node->left)
+        if (node->isTwoNode)
         {
           if (key < node->key1)
           {
@@ -62,107 +68,136 @@ namespace asafov
           }
           node->isTwoNode = false;
           ++size_;
-          return {nullptr, Key(), Value(), false};
+          return {};
         }
         else
         {
-          InsertResult ir;
-          if (key < node->key1) ir = insert(node->left, key, value);
-          else ir = insert(node->middle, key, value);
+          Key lowKey = node->key1;
+          Value lowValue = node->value1;
+          Key midKey;
+          Value midValue;
+          Key highKey = node->key2;
+          Value highValue = node->value2;
 
-          if (ir.wasSplit)
+          if (key < lowKey)
           {
-            Node* newNode = new Node(ir.promotedKey, ir.promotedValue);
-            newNode->isTwoNode = false;
-            if (key < node->key1)
-            {
-              newNode->left = ir.newChild;
-              newNode->middle = node;
-            }
-            else
-            {
-              newNode->left = node;
-              newNode->middle = ir.newChild;
-            }
-            return {newNode, node->key1, node->value1, true};
+            midKey = lowKey;
+            midValue = lowValue;
+            lowKey = key;
+            lowValue = value;
           }
-          return {nullptr, Key(), Value(), false};
+          else if (key < highKey)
+          {
+            midKey = key;
+            midValue = value;
+          }
+          else
+          {
+            midKey = highKey;
+            midValue = highValue;
+            highKey = key;
+            highValue = value;
+          }
+
+          Node* left = new Node(lowKey, lowValue);
+          Node* right = new Node(highKey, highValue);
+          ++size_;
+          return {left, midKey, midValue, true, right};
         }
       }
       else
       {
-        if (!node->left)
+        InsertResult ir;
+
+        if (key < node->key1)
+          ir = insert(node->left, key, value);
+        else if (node->isTwoNode || key < node->key2)
+          ir = insert(node->middle, key, value);
+        else
+          ir = insert(node->right, key, value);
+
+        if (!ir.wasSplit)
+          return {};
+
+        if (node->isTwoNode)
         {
-          Node* newNode = new Node(Key(), Value());
-          Key midKey;
-          Value midValue;
           if (key < node->key1)
           {
-            midKey = node->key1;
-            midValue = node->value1;
-            newNode->key1 = node->key2;
-            newNode->value1 = node->value2;
-            node->key1 = key;
-            node->value1 = value;
-          }
-          else if (key < node->key2)
-          {
-            midKey = key;
-            midValue = value;
-            newNode->key1 = node->key2;
-            newNode->value1 = node->value2;
+            node->key2 = node->key1;
+            node->value2 = node->value1;
+            node->key1 = ir.promotedKey;
+            node->value1 = ir.promotedValue;
+            node->right = node->middle;
+            node->left = ir.newChild;
+            node->middle = ir.rightChild;
           }
           else
           {
-            midKey = node->key2;
-            midValue = node->value2;
-            newNode->key1 = key;
-            newNode->value1 = value;
+            node->key2 = ir.promotedKey;
+            node->value2 = ir.promotedValue;
+            node->middle = ir.newChild;
+            node->right = ir.rightChild;
           }
-          node->isTwoNode = true;
-          ++size_;
-          return {newNode, midKey, midValue, true};
+          node->isTwoNode = false;
+          return {};
         }
         else
         {
-          InsertResult ir;
-          if (key < node->key1) ir = insert(node->left, key, value);
-          else if (key < node->key2) ir = insert(node->middle, key, value);
-          else ir = insert(node->right, key, value);
+          Node* left = new Node(Key(), Value());
+          Node* right = new Node(Key(), Value());
+          Key midKey;
+          Value midValue;
 
-          if (ir.wasSplit)
+          if (key < node->key1)
           {
-            Node* leftNode = new Node(node->key1, node->value1);
-            Node* rightNode = new Node(node->key2, node->value2);
-            leftNode->isTwoNode = true;
-            rightNode->isTwoNode = true;
+            left->key1 = ir.promotedKey;
+            left->value1 = ir.promotedValue;
+            left->left = ir.newChild;
+            left->middle = ir.rightChild;
 
-            if (key < node->key1)
-            {
-              leftNode->left = ir.newChild;
-              leftNode->middle = node->left;
-              rightNode->left = node->middle;
-              rightNode->middle = node->right;
-              return {new Node(node->key1, node->value1), node->key1, node->value1, true};
-            }
-            else if (key < node->key2)
-            {
-              leftNode->left = node->left;
-              leftNode->middle = ir.newChild;
-              rightNode->left = node->middle;
-              rightNode->middle = node->right;
-              return {new Node(key, value), key, value, true};
-            }
-            else
-            {
-              leftNode->left = node->left;
-              leftNode->middle = node->middle;
-              rightNode->left = ir.newChild;
-              rightNode->middle = node->right;
-              return {new Node(node->key2, node->value2), node->key2, node->value2, true};
-            }
+            right->key1 = node->key2;
+            right->value1 = node->value2;
+            right->left = node->middle;
+            right->middle = node->right;
+
+            midKey = node->key1;
+            midValue = node->value1;
           }
-          return {nullptr, Key(), Value(), false};
+          else if (key < node->key2)
+          {
+            left->key1 = node->key1;
+            left->value1 = node->value1;
+            left->left = node->left;
+            left->middle = ir.newChild;
+
+            right->key1 = node->key2;
+            right->value1 = node->value2;
+            right->left = ir.rightChild;
+            right->middle = node->right;
+
+            midKey = ir.promotedKey;
+            midValue = ir.promotedValue;
+          }
+          else
+          {
+            left->key1 = node->key1;
+            left->value1 = node->value1;
+            left->left = node->left;
+            left->middle = node->middle;
+
+            right->key1 = ir.promotedKey;
+            right->value1 = ir.promotedValue;
+            right->left = ir.newChild;
+            right->middle = ir.rightChild;
+
+            midKey = node->key2;
+            midValue = node->value2;
+          }
+
+          left->isTwoNode = true;
+          right->isTwoNode = true;
+
+          return {left, midKey, midValue, true, right};
         }
       }
     }
@@ -223,9 +258,7 @@ namespace asafov
       std::deque< pair_t > elements;
       typename std::deque< pair_t >::const_iterator current;
 
-      iterator()
-      {
-      }
+      iterator() = default;
 
       iterator(Node* root)
       {
@@ -312,24 +345,26 @@ namespace asafov
     Value& operator[](const Key& key)
     {
       Node* node = findNode(root, key);
-      if (node && node->key1 == key) return node->value1;
-      if (node && !node->isTwoNode && node->key2 == key) return node->value2;
+      if (node)
+      {
+        if (node->key1 == key) return node->value1;
+        if (!node->isTwoNode && node->key2 == key) return node->value2;
+      }
 
-      auto result = insert(root, key, Value{});
+      InsertResult result = insert(root, key, Value{});
       if (result.wasSplit)
       {
         Node* newRoot = new Node(result.promotedKey, result.promotedValue);
-        newRoot->isTwoNode = false;
+        newRoot->isTwoNode = true;
         newRoot->left = result.newChild;
-        newRoot->middle = root;
+        newRoot->middle = result.rightChild;
         root = newRoot;
       }
 
       node = findNode(root, key);
-
-      return (key == node->key1) ? node->value1 : node->value2;
+      return (node->key1 == key) ? node->value1 : node->value2;
     }
   };
-} // namespace asafov
+}
 
-#endif // MAP_HPP
+#endif
