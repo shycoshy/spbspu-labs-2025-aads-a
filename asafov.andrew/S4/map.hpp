@@ -324,7 +324,7 @@ namespace asafov
   private:
     node* root_;
     size_t size_;
-    std::vector< node* > deletes_;
+    std::deque< node* > deletes_;
   };
 }
 
