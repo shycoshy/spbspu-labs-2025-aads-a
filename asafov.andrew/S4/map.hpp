@@ -4,7 +4,6 @@
 #include <utility>
 #include <cstddef>
 #include <deque>
-#include <cassert>
 
 namespace asafov
 {
@@ -92,35 +91,79 @@ namespace asafov
       }
       else
       {
-        Node* newNode = new Node(Key(), Value());
-        Key midKey;
-        Value midValue;
-        if (key < node->key1)
+        if (!node->left)
         {
-          midKey = node->key1;
-          midValue = node->value1;
-          newNode->key1 = node->key2;
-          newNode->value1 = node->value2;
-          node->key1 = key;
-          node->value1 = value;
-        }
-        else if (key < node->key2)
-        {
-          midKey = key;
-          midValue = value;
-          newNode->key1 = node->key2;
-          newNode->value1 = node->value2;
+          Node* newNode = new Node(Key(), Value());
+          Key midKey;
+          Value midValue;
+          if (key < node->key1)
+          {
+            midKey = node->key1;
+            midValue = node->value1;
+            newNode->key1 = node->key2;
+            newNode->value1 = node->value2;
+            node->key1 = key;
+            node->value1 = value;
+          }
+          else if (key < node->key2)
+          {
+            midKey = key;
+            midValue = value;
+            newNode->key1 = node->key2;
+            newNode->value1 = node->value2;
+          }
+          else
+          {
+            midKey = node->key2;
+            midValue = node->value2;
+            newNode->key1 = key;
+            newNode->value1 = value;
+          }
+          node->isTwoNode = true;
+          ++size_;
+          return {newNode, midKey, midValue, true};
         }
         else
         {
-          midKey = node->key2;
-          midValue = node->value2;
-          newNode->key1 = key;
-          newNode->value1 = value;
+          InsertResult ir;
+          if (key < node->key1) ir = insert(node->left, key, value);
+          else if (key < node->key2) ir = insert(node->middle, key, value);
+          else ir = insert(node->right, key, value);
+
+          if (ir.wasSplit)
+          {
+            Node* leftNode = new Node(node->key1, node->value1);
+            Node* rightNode = new Node(node->key2, node->value2);
+            leftNode->isTwoNode = true;
+            rightNode->isTwoNode = true;
+
+            if (key < node->key1)
+            {
+              leftNode->left = ir.newChild;
+              leftNode->middle = node->left;
+              rightNode->left = node->middle;
+              rightNode->middle = node->right;
+              return {new Node(node->key1, node->value1), node->key1, node->value1, true};
+            }
+            else if (key < node->key2)
+            {
+              leftNode->left = node->left;
+              leftNode->middle = ir.newChild;
+              rightNode->left = node->middle;
+              rightNode->middle = node->right;
+              return {new Node(key, value), key, value, true};
+            }
+            else
+            {
+              leftNode->left = node->left;
+              leftNode->middle = node->middle;
+              rightNode->left = ir.newChild;
+              rightNode->middle = node->right;
+              return {new Node(node->key2, node->value2), node->key2, node->value2, true};
+            }
+          }
+          return {nullptr, Key(), Value(), false};
         }
-        node->isTwoNode = true;
-        ++size_;
-        return {newNode, midKey, midValue, true};
       }
     }
 
@@ -163,7 +206,14 @@ namespace asafov
 
     ~map()
     {
+      clear();
+    }
+
+    void clear()
+    {
       destroy(root);
+      root = nullptr;
+      size_ = 0;
     }
 
     class iterator
@@ -262,19 +312,21 @@ namespace asafov
     Value& operator[](const Key& key)
     {
       Node* node = findNode(root, key);
-      if (!node || (node->key1 != key && (node->isTwoNode || node->key2 != key)))
+      if (node && node->key1 == key) return node->value1;
+      if (node && !node->isTwoNode && node->key2 == key) return node->value2;
+
+      auto result = insert(root, key, Value{});
+      if (result.wasSplit)
       {
-        auto result = insert(root, key, Value{});
-        if (result.wasSplit)
-        {
-          Node* newRoot = new Node(result.promotedKey, result.promotedValue);
-          newRoot->isTwoNode = false;
-          newRoot->left = result.newChild;
-          newRoot->middle = root;
-          root = newRoot;
-        }
-        node = findNode(root, key);
+        Node* newRoot = new Node(result.promotedKey, result.promotedValue);
+        newRoot->isTwoNode = false;
+        newRoot->left = result.newChild;
+        newRoot->middle = root;
+        root = newRoot;
       }
+
+      node = findNode(root, key);
+
       return (key == node->key1) ? node->value1 : node->value2;
     }
   };
