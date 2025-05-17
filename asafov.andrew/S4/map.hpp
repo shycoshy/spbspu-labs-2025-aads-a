@@ -184,6 +184,12 @@ namespace asafov
         current = elements.begin();
       }
 
+      iterator(std::deque< pair_t >&& deque_init)
+      {
+        elements = std::move(deque_init);
+        current = elements.begin();
+      }
+
       const pair_t& operator*() const
       {
         return *current;
@@ -250,7 +256,7 @@ namespace asafov
       std::deque< std::pair< const Key, Value > > output;
       if (found->key1 == key) output.emplace_back(found->key1, found->value1);
       else if (!found->isTwoNode && found->key2 == key) output.emplace_back(found->key2, found->value2);
-      return iterator{output};
+      return iterator(std::move(output));
     }
 
     Value& operator[](const Key& key)
