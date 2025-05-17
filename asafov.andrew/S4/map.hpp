@@ -168,21 +168,19 @@ namespace asafov
 
     class iterator
     {
+    public:
       using pair_t = std::pair< const Key, Value >;
       std::deque< pair_t > elements;
       typename std::deque< pair_t >::const_iterator current;
 
-    public:
       iterator()
       {
       }
 
       iterator(Node* root)
       {
-        std::deque< pair_t > elems;
         map temp;
-        temp.inorder(root, elems);
-        elements = std::move(elems);
+        temp.inorder(root, elements);
         current = elements.begin();
       }
 
@@ -252,10 +250,7 @@ namespace asafov
       std::deque< std::pair< const Key, Value > > output;
       if (found->key1 == key) output.emplace_back(found->key1, found->value1);
       else if (!found->isTwoNode && found->key2 == key) output.emplace_back(found->key2, found->value2);
-      iterator it;
-      it.elements = std::move(output);
-      it.current = it.elements.begin();
-      return it;
+      return iterator{output};
     }
 
     Value& operator[](const Key& key)
