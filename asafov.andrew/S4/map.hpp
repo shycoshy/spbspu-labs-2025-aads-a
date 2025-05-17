@@ -3,6 +3,7 @@
 
 #include <utility>
 #include <cstddef>
+#include <deque>
 #include <cassert>
 
 namespace asafov
@@ -21,8 +22,7 @@ namespace asafov
       Node* right;
 
       Node(const Key& k, const Value& v)
-        : isTwoNode(true), key1(k), value1(v),
-          left(nullptr), middle(nullptr), right(nullptr)
+        : isTwoNode(true), key1(k), value1(v), left(nullptr), middle(nullptr), right(nullptr)
       {
       }
     };
@@ -38,7 +38,6 @@ namespace asafov
       bool wasSplit;
     };
 
-    // Вставка с балансировкой
     InsertResult insert(Node* node, const Key& key, const Value& value)
     {
       if (!node)
@@ -50,7 +49,6 @@ namespace asafov
       {
         if (!node->left)
         {
-          // Лист, преобразуем в 3-узел
           if (key < node->key1)
           {
             node->key2 = node->key1;
@@ -69,7 +67,6 @@ namespace asafov
         }
         else
         {
-          // Рекурсивная вставка
           InsertResult ir;
           if (key < node->key1) ir = insert(node->left, key, value);
           else ir = insert(node->middle, key, value);
@@ -95,7 +92,6 @@ namespace asafov
       }
       else
       {
-        // Расщепляем 3-узел
         Node* newNode = new Node(Key(), Value());
         Key midKey;
         Value midValue;
@@ -147,6 +143,19 @@ namespace asafov
       delete node;
     }
 
+    void inorder(Node* node, std::deque< std::pair< const Key, Value > >& output) const
+    {
+      if (!node) return;
+      if (node->left) inorder(node->left, output);
+      output.emplace_back(node->key1, node->value1);
+      if (node->middle) inorder(node->middle, output);
+      if (!node->isTwoNode)
+      {
+        output.emplace_back(node->key2, node->value2);
+        if (node->right) inorder(node->right, output);
+      }
+    }
+
   public:
     map() : root(nullptr), size_(0)
     {
@@ -159,81 +168,48 @@ namespace asafov
 
     class iterator
     {
-      // минимальный итератор для begin() и end()
       using pair_t = std::pair< const Key, Value >;
-
-      struct StackNode
-      {
-        Node* node;
-        bool firstDone;
-        bool secondDone;
-      };
-
-      StackNode stack[64];
-      int top;
-      pair_t current;
-
-      void pushLeft(Node* node)
-      {
-        while (node)
-        {
-          stack[++top] = {node, false, false};
-          node = node->left;
-        }
-      }
+      std::deque< pair_t > elements;
+      typename std::deque< pair_t >::const_iterator current;
 
     public:
-      iterator() : top(-1)
+      iterator()
       {
       }
 
-      iterator(Node* root) : top(-1)
+      iterator(Node* root)
       {
-        pushLeft(root);
-        ++(*this);
-      }
-
-      iterator& operator++()
-      {
-        while (top >= 0)
-        {
-          auto& sn = stack[top];
-          if (!sn.firstDone)
-          {
-            current = {sn.node->key1, sn.node->value1};
-            sn.firstDone = true;
-            pushLeft(sn.node->middle);
-            return *this;
-          }
-          else if (!sn.node->isTwoNode && !sn.secondDone)
-          {
-            current = {sn.node->key2, sn.node->value2};
-            sn.secondDone = true;
-            pushLeft(sn.node->right);
-            return *this;
-          }
-          else
-          {
-            --top;
-          }
-        }
-        current = pair_t();
-        return *this;
+        std::deque< pair_t > elems;
+        map temp;
+        temp.inorder(root, elems);
+        elements = std::move(elems);
+        current = elements.begin();
       }
 
       const pair_t& operator*() const
       {
-        return current;
+        return *current;
       }
 
       const pair_t* operator->() const
       {
-        return &current;
+        return &(*current);
+      }
+
+      iterator& operator++()
+      {
+        ++current;
+        return *this;
+      }
+
+      bool operator==(const iterator& other) const
+      {
+        return current == other.current;
       }
 
       bool operator!=(const iterator& other) const
       {
-        return top != other.top;
+        return !(*this == other);
       }
     };
 
@@ -244,7 +220,7 @@ namespace asafov
 
     iterator end() const
     {
-      return iterator(); // пустой
+      return iterator();
     }
 
     bool empty() const
@@ -256,27 +232,32 @@ namespace asafov
     {
       Node* found = findNode(root, key);
       if (!found) return end();
-      map temp;
-      temp.root = found;
-      return temp.begin();
+      std::deque< std::pair< const Key, Value > > output;
+      if (found->key1 == key) output.emplace_back(found->key1, found->value1);
+      else if (!found->isTwoNode && found->key2 == key) output.emplace_back(found->key2, found->value2);
+      iterator it;
+      it.elements = std::move(output);
+      it.current = it.elements.begin();
+      return it;
     }
 
     Value& operator[](const Key& key)
     {
       Node* node = findNode(root, key);
-      if (!node)
+      if (!node || (node->key1 != key && (node->isTwoNode || node->key2 != key)))
       {
         auto result = insert(root, key, Value{});
         if (result.wasSplit)
         {
-          root = new Node(result.promotedKey, result.promotedValue);
-          root->isTwoNode = false;
-          root->left = result.newChild;
-          root->middle = root; // old root
+          Node* newRoot = new Node(result.promotedKey, result.promotedValue);
+          newRoot->isTwoNode = false;
+          newRoot->left = result.newChild;
+          newRoot->middle = root;
+          root = newRoot;
         }
         node = findNode(root, key);
       }
-      return key == node->key1 ? node->value1 : node->value2;
+      return (key == node->key1) ? node->value1 : node->value2;
     }
   };
 } // namespace asafov
