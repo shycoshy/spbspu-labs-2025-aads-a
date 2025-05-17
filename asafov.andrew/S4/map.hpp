@@ -1,10 +1,8 @@
-#ifndef MAP_HPP
-#define MAP_HPP
-
+#ifndef MAP_H
+#define MAP_H
+#include <iostream>
+#include <stack>
 #include <utility>
-#include <cstddef>
-#include <deque>
-#include <stdexcept>
 
 namespace asafov
 {
@@ -12,297 +10,170 @@ namespace asafov
   class map
   {
   private:
-    struct Node
-    {
-      bool isTwoNode;
-      Key key1, key2;
-      Value value1, value2;
-      Node* left;
-      Node* middle;
-      Node* right;
+    enum Color { RED, BLACK };
 
-      Node(const Key& k, const Value& v)
-        : isTwoNode(true), key1(k), value1(v), left(nullptr), middle(nullptr), right(nullptr)
+    struct node
+    {
+      Key key;
+      Value value;
+      Color color;
+      node* left;
+      node* right;
+      node* parent;
+
+      node(const Key& k, const Value& v, Color c,
+           node* l = nullptr, node* r = nullptr, node* p = nullptr)
+        : key(k), value(v), color(c), left(l), right(r), parent(p)
       {
       }
     };
 
-    Node* root;
-    std::size_t size_;
-
-    struct InsertResult
-    {
-      Node* newChild;
-      Key promotedKey;
-      Value promotedValue;
-      bool wasSplit;
-      Node* rightChild;
-
-      InsertResult(Node* n = nullptr, Key k = Key(), Value v = Value(), bool s = false, Node* r = nullptr)
-        : newChild(n), promotedKey(k), promotedValue(v), wasSplit(s), rightChild(r)
-      {
-      }
-    };
-
-    InsertResult insert(Node* node, const Key& key, const Value& value, int depth = 0)
-    {
-      if (depth > 1000) throw std::runtime_error("Stack overflow likely due to infinite recursion");
-      if (!node)
-      {
-        return {new Node(key, value), Key(), Value(), true};
-      }
-
-      if (!node->left)
-      {
-        if (node->isTwoNode)
-        {
-          if (key < node->key1)
-          {
-            node->key2 = node->key1;
-            node->value2 = node->value1;
-            node->key1 = key;
-            node->value1 = value;
-          }
-          else
-          {
-            node->key2 = key;
-            node->value2 = value;
-          }
-          node->isTwoNode = false;
-          ++size_;
-          return {};
-        }
-        else
-        {
-          Key lowKey = node->key1;
-          Value lowValue = node->value1;
-          Key midKey;
-          Value midValue;
-          Key highKey = node->key2;
-          Value highValue = node->value2;
-
-          if (key < lowKey)
-          {
-            midKey = lowKey;
-            midValue = lowValue;
-            lowKey = key;
-            lowValue = value;
-          }
-          else if (key < highKey)
-          {
-            midKey = key;
-            midValue = value;
-          }
-          else
-          {
-            midKey = highKey;
-            midValue = highValue;
-            highKey = key;
-            highValue = value;
-          }
-
-          Node* left = new Node(lowKey, lowValue);
-          Node* right = new Node(highKey, highValue);
-          ++size_;
-          return {left, midKey, midValue, true, right};
-        }
-      }
-      else
-      {
-        InsertResult ir;
-
-        if (key < node->key1)
-          ir = insert(node->left, key, value, depth + 1);
-        else if (node->isTwoNode || key < node->key2)
-          ir = insert(node->middle, key, value);
-        else
-          ir = insert(node->right, key, value);
-
-        if (!ir.wasSplit)
-          return {};
-
-        if (node->isTwoNode)
-        {
-          if (key < node->key1)
-          {
-            node->key2 = node->key1;
-            node->value2 = node->value1;
-            node->key1 = ir.promotedKey;
-            node->value1 = ir.promotedValue;
-            node->right = node->middle;
-            node->left = ir.newChild;
-            node->middle = ir.rightChild;
-          }
-          else
-          {
-            node->key2 = ir.promotedKey;
-            node->value2 = ir.promotedValue;
-            node->middle = ir.newChild;
-            node->right = ir.rightChild;
-          }
-          node->isTwoNode = false;
-          return {};
-        }
-        else
-        {
-          Node* left = new Node(Key(), Value());
-          Node* right = new Node(Key(), Value());
-          Key midKey;
-          Value midValue;
-
-          if (key < node->key1)
-          {
-            left->key1 = ir.promotedKey;
-            left->value1 = ir.promotedValue;
-            left->left = ir.newChild;
-            left->middle = ir.rightChild;
-
-            right->key1 = node->key2;
-            right->value1 = node->value2;
-            right->left = node->middle;
-            right->middle = node->right;
-
-            midKey = node->key1;
-            midValue = node->value1;
-          }
-          else if (key < node->key2)
-          {
-            left->key1 = node->key1;
-            left->value1 = node->value1;
-            left->left = node->left;
-            left->middle = ir.newChild;
-
-            right->key1 = node->key2;
-            right->value1 = node->value2;
-            right->left = ir.rightChild;
-            right->middle = node->right;
-
-            midKey = ir.promotedKey;
-            midValue = ir.promotedValue;
-          }
-          else
-          {
-            left->key1 = node->key1;
-            left->value1 = node->value1;
-            left->left = node->left;
-            left->middle = node->middle;
-
-            right->key1 = ir.promotedKey;
-            right->value1 = ir.promotedValue;
-            right->left = ir.newChild;
-            right->middle = ir.rightChild;
-
-            midKey = node->key2;
-            midValue = node->value2;
-          }
-
-          left->isTwoNode = true;
-          right->isTwoNode = true;
-
-          return {left, midKey, midValue, true, right};
-        }
-      }
-    }
-
-    Node* findNode(Node* node, const Key& key) const
-    {
-      if (!node) return nullptr;
-      if (key == node->key1) return node;
-      if (!node->isTwoNode && key == node->key2) return node;
-      if (key < node->key1) return findNode(node->left, key);
-      if (node->isTwoNode || key < node->key2) return findNode(node->middle, key);
-      return findNode(node->right, key);
-    }
-
-    void destroy(Node* node)
-    {
-      if (!node) return;
-      destroy(node->left);
-      destroy(node->middle);
-      destroy(node->right);
-      delete node;
-    }
-
-    void inorder(Node* node, std::deque< std::pair< const Key, Value > >& output) const
-    {
-      if (!node) return;
-      if (node->left) inorder(node->left, output);
-      output.emplace_back(node->key1, node->value1);
-      if (node->middle) inorder(node->middle, output);
-      if (!node->isTwoNode)
-      {
-        output.emplace_back(node->key2, node->value2);
-        if (node->right) inorder(node->right, output);
-      }
-    }
+    node* root = nullptr;
+    size_t tree_size = 0;
 
   public:
-    map() : root(nullptr), size_(0)
-    {
-    }
+    map() = default;
 
     ~map()
     {
-      clear();
+      destroy_tree(root);
     }
 
-    void clear()
+    Value& operator[](const Key& key)
     {
-      destroy(root);
-      root = nullptr;
-      size_ = 0;
+      node* n = root;
+      node* parent = nullptr;
+
+      while (n)
+      {
+        parent = n;
+        if (key == n->key)
+          return n->value;
+        n = (key < n->key) ? n->left : n->right;
+      }
+
+      node* new_node = new node(key, Value(), RED, nullptr, nullptr, parent);
+      if (!parent)
+      {
+        root = new_node;
+      }
+      else if (key < parent->key)
+      {
+        parent->left = new_node;
+      }
+      else
+      {
+        parent->right = new_node;
+      }
+
+      insert_fixup(new_node);
+      ++tree_size;
+      return new_node->value;
     }
 
+    bool insert(const std::pair< Key, Value >& kv)
+    {
+      const Key& key = kv.first;
+      const Value& value = kv.second;
+      node* n = root;
+      node* parent = nullptr;
+
+      while (n)
+      {
+        if (key == n->key)
+          return false;
+        parent = n;
+        n = (key < n->key) ? n->left : n->right;
+      }
+
+      node* new_node = new node(key, value, RED, nullptr, nullptr, parent);
+      if (!parent)
+      {
+        root = new_node;
+      }
+      else if (key < parent->key)
+      {
+        parent->left = new_node;
+      }
+      else
+      {
+        parent->right = new_node;
+      }
+
+      insert_fixup(new_node);
+      ++tree_size;
+      return true;
+    }
+
+    bool contains(const Key& key) const
+    {
+      return find_node(key) != nullptr;
+    }
+
+    Value* find(const Key& key)
+    {
+      node* n = find_node(key);
+      return n ? &n->value : nullptr;
+    }
+
+    size_t size() const
+    {
+      return tree_size;
+    }
+
+    bool empty() const
+    {
+      return tree_size == 0;
+    }
+
+    // In-order iterator
     class iterator
     {
+    private:
+      node* current;
+      std::stack< node* > stack;
+
+      void push_left(node* n)
+      {
+        while (n)
+        {
+          stack.push(n);
+          n = n->left;
+        }
+      }
+
     public:
-      using pair_t = std::pair< const Key, Value >;
-      std::deque< pair_t > elements;
-      typename std::deque< pair_t >::const_iterator current;
-
-      iterator() = default;
-
-      iterator(Node* root)
+      iterator(node* root) : current(nullptr)
       {
-        map temp;
-        temp.inorder(root, elements);
-        current = elements.begin();
+        push_left(root);
+        ++(*this);
       }
 
-      iterator(std::deque< pair_t >&& deque_init)
+      std::pair< const Key&, Value& > operator*() const
       {
-        elements = std::move(deque_init);
-        current = elements.begin();
-      }
-
-      const pair_t& operator*() const
-      {
-        return *current;
-      }
-
-      const pair_t* operator->() const
-      {
-        return &(*current);
+        return {current->key, current->value};
       }
 
       iterator& operator++()
       {
-        ++current;
+        if (!stack.empty())
+        {
+          current = stack.top();
+          stack.pop();
+          push_left(current->right);
+        }
+        else
+        {
+          current = nullptr;
+        }
         return *this;
-      }
-
-      bool operator==(const iterator& other) const
-      {
-        return current == other.current;
       }
 
       bool operator!=(const iterator& other) const
       {
-        return !(*this == other);
+        return current != other.current;
       }
     };
-
-    using const_iterator = iterator;
 
     iterator begin() const
     {
@@ -311,62 +182,113 @@ namespace asafov
 
     iterator end() const
     {
-      return iterator();
+      return iterator(nullptr);
     }
 
-    const_iterator cbegin() const
+  private:
+    node* find_node(const Key& key) const
     {
-      return iterator(root);
-    }
-
-    const_iterator cend() const
-    {
-      return iterator();
-    }
-
-    bool empty() const
-    {
-      return size_ == 0;
-    }
-
-    std::size_t size() const
-    {
-      return size_;
-    }
-
-    iterator find(const Key& key) const
-    {
-      Node* found = findNode(root, key);
-      if (!found) return end();
-      std::deque< std::pair< const Key, Value > > output;
-      if (found->key1 == key) output.emplace_back(found->key1, found->value1);
-      else if (!found->isTwoNode && found->key2 == key) output.emplace_back(found->key2, found->value2);
-      return iterator(std::move(output));
-    }
-
-    Value& operator[](const Key& key)
-    {
-      Node* node = findNode(root, key);
-      if (node)
+      node* n = root;
+      while (n)
       {
-        if (node->key1 == key) return node->value1;
-        if (!node->isTwoNode && node->key2 == key) return node->value2;
+        if (key == n->key)
+          return n;
+        n = (key < n->key) ? n->left : n->right;
       }
+      return nullptr;
+    }
 
-      InsertResult result = insert(root, key, Value{});
-      if (result.wasSplit)
+    void left_rotate(node* x)
+    {
+      node* y = x->right;
+      x->right = y->left;
+      if (y->left) y->left->parent = x;
+      y->parent = x->parent;
+      if (!x->parent)
+        root = y;
+      else if (x == x->parent->left)
+        x->parent->left = y;
+      else
+        x->parent->right = y;
+      y->left = x;
+      x->parent = y;
+    }
+
+    void right_rotate(node* y)
+    {
+      node* x = y->left;
+      y->left = x->right;
+      if (x->right) x->right->parent = y;
+      x->parent = y->parent;
+      if (!y->parent)
+        root = x;
+      else if (y == y->parent->right)
+        y->parent->right = x;
+      else
+        y->parent->left = x;
+      x->right = y;
+      y->parent = x;
+    }
+
+    void insert_fixup(node* z)
+    {
+      while (z->parent && z->parent->color == RED)
       {
-        Node* newRoot = new Node(result.promotedKey, result.promotedValue);
-        newRoot->isTwoNode = true;
-        newRoot->left = result.newChild;
-        newRoot->middle = result.rightChild;
-        root = newRoot;
+        if (z->parent == z->parent->parent->left)
+        {
+          node* y = z->parent->parent->right;
+          if (y && y->color == RED)
+          {
+            z->parent->color = BLACK;
+            y->color = BLACK;
+            z->parent->parent->color = RED;
+            z = z->parent->parent;
+          }
+          else
+          {
+            if (z == z->parent->right)
+            {
+              z = z->parent;
+              left_rotate(z);
+            }
+            z->parent->color = BLACK;
+            z->parent->parent->color = RED;
+            right_rotate(z->parent->parent);
+          }
+        }
+        else
+        {
+          node* y = z->parent->parent->left;
+          if (y && y->color == RED)
+          {
+            z->parent->color = BLACK;
+            y->color = BLACK;
+            z->parent->parent->color = RED;
+            z = z->parent->parent;
+          }
+          else
+          {
+            if (z == z->parent->left)
+            {
+              z = z->parent;
+              right_rotate(z);
+            }
+            z->parent->color = BLACK;
+            z->parent->parent->color = RED;
+            left_rotate(z->parent->parent);
+          }
+        }
       }
+      root->color = BLACK;
+    }
 
-      node = findNode(root, key);
-      return (node->key1 == key) ? node->value1 : node->value2;
+    void destroy_tree(node* n)
+    {
+      if (!n) return;
+      destroy_tree(n->left);
+      destroy_tree(n->right);
+      delete n;
     }
   };
 }
-
 #endif
