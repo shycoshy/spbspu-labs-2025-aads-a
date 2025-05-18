@@ -1,6 +1,7 @@
 #ifndef MAP_HPP
 #define MAP_HPP
 #include <utility>
+#include <stdexcept>
 
 namespace asafov
 {
@@ -23,11 +24,10 @@ namespace asafov
 
       explicit node(const std::pair< Key, Value >& val):
         data(val)
-      {
-      }
+      {}
     };
 
-    void leftRotate(node* x)
+    void rotateLeft(node* x)
     {
       node* y = x->right;
       x->right = y->left;
@@ -40,7 +40,7 @@ namespace asafov
       x->parent = y;
     }
 
-    void rightRotate(node* y)
+    void rotateRight(node* y)
     {
       node* x = y->left;
       y->left = x->right;
@@ -53,7 +53,7 @@ namespace asafov
       y->parent = x;
     }
 
-    void insertFix(node* z)
+    void balance(node* z)
     {
       while (z->parent && z->parent->color == RED)
       {
@@ -72,11 +72,11 @@ namespace asafov
             if (z == z->parent->right)
             {
               z = z->parent;
-              leftRotate(z);
+              rotateLeft(z);
             }
             z->parent->color = BLACK;
             z->parent->parent->color = RED;
-            rightRotate(z->parent->parent);
+            rotateRight(z->parent->parent);
           }
         }
         else
@@ -94,11 +94,11 @@ namespace asafov
             if (z == z->parent->left)
             {
               z = z->parent;
-              rightRotate(z);
+              rotateRight(z);
             }
             z->parent->color = BLACK;
             z->parent->parent->color = RED;
-            leftRotate(z->parent->parent);
+            rotateLeft(z->parent->parent);
           }
         }
       }
@@ -117,19 +117,8 @@ namespace asafov
       return nullptr;
     }
 
-    void deleteTree(node* node)
-    {
-      if (!node) return;
-      deleteTree(node->left);
-      deleteTree(node->right);
-      node->left = node->right = nullptr;
-      node->parent = nullptr;
-      delete node;
-    }
-
   public:
     map() = default;
-
     map(const map& other) : root_(nullptr)
     {
       for (auto it = other.begin(); it != other.end(); ++it)
@@ -137,12 +126,11 @@ namespace asafov
         (*this)[it->first] = it->second;
       }
     }
-
     map& operator=(const map& other)
     {
       if (this != &other)
       {
-        deleteTree(root_);
+        clear(root_);
         root_ = nullptr;
         for (auto it = other.begin(); it != other.end(); ++it)
         {
@@ -151,26 +139,23 @@ namespace asafov
       }
       return *this;
     }
-
     map(map&& other) noexcept : root_(other.root_)
     {
       other.root_ = nullptr;
     }
-
     map& operator=(map&& other) noexcept
     {
       if (this != &other)
       {
-        deleteTree(root_);
+        clear(root_);
         root_ = other.root_;
         other.root_ = nullptr;
       }
       return *this;
     }
-
     ~map()
     {
-      deleteTree(root_);
+      clear(root_);
     }
 
     Value& operator[](const Key& key)
@@ -180,28 +165,79 @@ namespace asafov
       while (current)
       {
         if (key == current->data.first)
+        {
           return current->data.second;
+        }
         parent = current;
-        if (key < current->data.first) current = current->left;
-        else current = current->right;
+        if (key < current->data.first)
+        {
+          current = current->left;
+        }
+        else
+        {
+          current = current->right;
+        }
       }
-      node* newNode = new node({key, Value{}});
-      newNode->parent = parent;
+      node* temp = new node({key, Value{}});
+      temp->parent = parent;
       if (!parent)
-        root_ = newNode;
+      {
+        root_ = temp;
+      }
       else if (key < parent->data.first)
-        parent->left = newNode;
+      {
+        parent->left = temp;
+      }
       else
-        parent->right = newNode;
-      insertFix(newNode);
-      return newNode->data.second;
+      {
+        parent->right = temp;
+      }
+      balance(temp);
+      return temp->data.second;
+    }
+    Value& at(const Key& key)
+    {
+      node* node = findNode(key);
+      if (!node)
+      {
+        throw std::out_of_range("key not found!");
+      }
+      return node->data.second;
+    }
+    const Value& at(const Key& key) const
+    {
+      node* node = findNode(key);
+      if (!node)
+      {
+        throw std::out_of_range("key not found!");
+      }
+      return node->data.second;
     }
 
+    void clear(node* node)
+    {
+      if (!node) return;
+      clear(node->left);
+      clear(node->right);
+      node->left = node->right = nullptr;
+      node->parent = nullptr;
+      delete node;
+    }
+
+    size_t size() const
+    {
+      return size_;
+    }
     bool empty() const
     {
       return root_ == nullptr;
     }
 
+    void swap(map& other) noexcept
+    {
+      std::swap(root_, other.root_);
+    }
+    
     class iterator
     {
       node* current;
@@ -263,12 +299,10 @@ namespace asafov
     {
       return iterator(root_);
     }
-
     iterator end() const
     {
       return iterator(nullptr);
     }
-
     iterator find(const Key& key) const
     {
       return iterator(findNode(key));
@@ -276,6 +310,7 @@ namespace asafov
 
   private:
     node* root_ = nullptr;
+    size_t size_ = 0;
   };
 }
 #endif
