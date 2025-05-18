@@ -31,11 +31,23 @@ namespace asafov
     {
       node* y = x->right;
       x->right = y->left;
-      if (y->left) y->left->parent = x;
+      if (y->left)
+      {
+        y->left->parent = x;
+      }
       y->parent = x->parent;
-      if (!x->parent) root_ = y;
-      else if (x == x->parent->left) x->parent->left = y;
-      else x->parent->right = y;
+      if (!x->parent)
+      {
+        root_ = y;
+      }
+      else if (x == x->parent->left)
+      {
+        x->parent->left = y;
+      }
+      else
+      {
+        x->parent->right = y;
+      }
       y->left = x;
       x->parent = y;
     }
@@ -44,11 +56,23 @@ namespace asafov
     {
       node* x = y->left;
       y->left = x->right;
-      if (x->right) x->right->parent = y;
+      if (x->right)
+      {
+        x->right->parent = y;
+      }
       x->parent = y->parent;
-      if (!y->parent) root_ = x;
-      else if (y == y->parent->right) y->parent->right = x;
-      else y->parent->left = x;
+      if (!y->parent)
+      {
+        root_ = x;
+      }
+      else if (y == y->parent->right)
+      {
+        y->parent->right = x;
+      }
+      else
+      {
+        y->parent->left = x;
+      }
       x->right = y;
       y->parent = x;
     }
@@ -110,9 +134,18 @@ namespace asafov
       node* current = root_;
       while (current)
       {
-        if (key == current->data.first) return current;
-        if (key < current->data.first) current = current->left;
-        else current = current->right;
+        if (key == current->data.first)
+        {
+          return current;
+        }
+        if (key < current->data.first)
+        {
+          current = current->left;
+        }
+        else
+        {
+          current = current->right;
+        }
       }
       return nullptr;
     }
@@ -216,7 +249,10 @@ namespace asafov
 
     void clear(node* node)
     {
-      if (!node) return;
+      if (!node)
+      {
+        return;
+      }
       clear(node->left);
       clear(node->right);
       node->left = node->right = nullptr;
@@ -240,15 +276,14 @@ namespace asafov
 
     class iterator
     {
-      node* current;
-
       void goLeftmost()
       {
         while (current && current->left) current = current->left;
       }
 
     public:
-      iterator(node* node) : current(node)
+      iterator(node* node):
+        current(node)
       {
         goLeftmost();
       }
@@ -257,7 +292,6 @@ namespace asafov
       {
         return current->data;
       }
-
       std::pair< Key, Value >* operator->() const
       {
         return &(current->data);
@@ -288,11 +322,12 @@ namespace asafov
       {
         return current != other.current;
       }
-
       bool operator==(const iterator& other) const
       {
         return current == other.current;
       }
+    private:
+      node* current;
     };
 
     iterator begin() const
