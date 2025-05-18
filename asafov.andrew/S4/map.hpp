@@ -1,7 +1,6 @@
-#ifndef MAP_H
-#define MAP_H
-#include <iostream>
-#include <stack>
+#ifndef MAP_HPP
+#define MAP_HPP
+
 #include <utility>
 
 namespace asafov
@@ -9,228 +8,52 @@ namespace asafov
   template< typename Key, typename Value >
   class map
   {
-  private:
-    enum Color { RED, BLACK };
+    enum Color: char
+    {
+      RED,
+      BLACK
+    };
 
     struct node
     {
-      Key key;
-      Value value;
-      Color color;
-      node* left;
-      node* right;
-      node* parent;
-
-      node(const Key& k, const Value& v, Color c,
-           node* l = nullptr, node* r = nullptr, node* p = nullptr)
-        : key(k), value(v), color(c), left(l), right(r), parent(p)
-      {
-      }
-    };
-
-    node* root = nullptr;
-    size_t tree_size = 0;
-
-  public:
-    map() = default;
-
-    ~map()
-    {
-      destroy_tree(root);
-    }
-
-    Value& operator[](const Key& key)
-    {
-      node* n = root;
+      std::pair< Key, Value > data;
+      node* left = nullptr;
+      node* right = nullptr;
       node* parent = nullptr;
+      Color color = RED;
 
-      while (n)
-      {
-        parent = n;
-        if (key == n->key)
-          return n->value;
-        n = (key < n->key) ? n->left : n->right;
-      }
-
-      node* new_node = new node(key, Value(), RED, nullptr, nullptr, parent);
-      if (!parent)
-      {
-        root = new_node;
-      }
-      else if (key < parent->key)
-      {
-        parent->left = new_node;
-      }
-      else
-      {
-        parent->right = new_node;
-      }
-
-      insert_fixup(new_node);
-      ++tree_size;
-      return new_node->value;
-    }
-
-    bool insert(const std::pair< Key, Value >& kv)
-    {
-      const Key& key = kv.first;
-      const Value& value = kv.second;
-      node* n = root;
-      node* parent = nullptr;
-
-      while (n)
-      {
-        if (key == n->key)
-          return false;
-        parent = n;
-        n = (key < n->key) ? n->left : n->right;
-      }
-
-      node* new_node = new node(key, value, RED, nullptr, nullptr, parent);
-      if (!parent)
-      {
-        root = new_node;
-      }
-      else if (key < parent->key)
-      {
-        parent->left = new_node;
-      }
-      else
-      {
-        parent->right = new_node;
-      }
-
-      insert_fixup(new_node);
-      ++tree_size;
-      return true;
-    }
-
-    bool contains(const Key& key) const
-    {
-      return find_node(key) != nullptr;
-    }
-
-    Value* find(const Key& key)
-    {
-      node* n = find_node(key);
-      return n ? &n->value : nullptr;
-    }
-
-    size_t size() const
-    {
-      return tree_size;
-    }
-
-    bool empty() const
-    {
-      return tree_size == 0;
-    }
-
-    // In-order iterator
-    class iterator
-    {
-    private:
-      node* current;
-      std::stack< node* > stack;
-
-      void push_left(node* n)
-      {
-        while (n)
-        {
-          stack.push(n);
-          n = n->left;
-        }
-      }
-
-    public:
-      iterator(node* root) : current(nullptr)
-      {
-        push_left(root);
-        ++(*this);
-      }
-
-      std::pair< const Key&, Value& > operator*() const
-      {
-        return {current->key, current->value};
-      }
-
-      iterator& operator++()
-      {
-        if (!stack.empty())
-        {
-          current = stack.top();
-          stack.pop();
-          push_left(current->right);
-        }
-        else
-        {
-          current = nullptr;
-        }
-        return *this;
-      }
-
-      bool operator!=(const iterator& other) const
-      {
-        return current != other.current;
-      }
+      explicit node(const std::pair< Key, Value >& val):
+        data(val)
+      {}
     };
-
-    iterator begin() const
-    {
-      return iterator(root);
-    }
-
-    iterator end() const
-    {
-      return iterator(nullptr);
-    }
-
-  private:
-    node* find_node(const Key& key) const
-    {
-      node* n = root;
-      while (n)
-      {
-        if (key == n->key)
-          return n;
-        n = (key < n->key) ? n->left : n->right;
-      }
-      return nullptr;
-    }
-
-    void left_rotate(node* x)
+    
+    void leftRotate(node* x)
     {
       node* y = x->right;
       x->right = y->left;
       if (y->left) y->left->parent = x;
       y->parent = x->parent;
-      if (!x->parent)
-        root = y;
-      else if (x == x->parent->left)
-        x->parent->left = y;
-      else
-        x->parent->right = y;
+      if (!x->parent) root_ = y;
+      else if (x == x->parent->left) x->parent->left = y;
+      else x->parent->right = y;
       y->left = x;
       x->parent = y;
     }
 
-    void right_rotate(node* y)
+    void rightRotate(node* y)
     {
       node* x = y->left;
       y->left = x->right;
       if (x->right) x->right->parent = y;
       x->parent = y->parent;
-      if (!y->parent)
-        root = x;
-      else if (y == y->parent->right)
-        y->parent->right = x;
-      else
-        y->parent->left = x;
+      if (!y->parent) root_ = x;
+      else if (y == y->parent->right) y->parent->right = x;
+      else y->parent->left = x;
       x->right = y;
       y->parent = x;
     }
 
-    void insert_fixup(node* z)
+    void insertFix(node* z)
     {
       while (z->parent && z->parent->color == RED)
       {
@@ -249,11 +72,11 @@ namespace asafov
             if (z == z->parent->right)
             {
               z = z->parent;
-              left_rotate(z);
+              leftRotate(z);
             }
             z->parent->color = BLACK;
             z->parent->parent->color = RED;
-            right_rotate(z->parent->parent);
+            rightRotate(z->parent->parent);
           }
         }
         else
@@ -271,24 +94,148 @@ namespace asafov
             if (z == z->parent->left)
             {
               z = z->parent;
-              right_rotate(z);
+              rightRotate(z);
             }
             z->parent->color = BLACK;
             z->parent->parent->color = RED;
-            left_rotate(z->parent->parent);
+            leftRotate(z->parent->parent);
           }
         }
       }
-      root->color = BLACK;
+      root_->color = BLACK;
     }
 
-    void destroy_tree(node* n)
+    node* findNode(const Key& key) const
     {
-      if (!n) return;
-      destroy_tree(n->left);
-      destroy_tree(n->right);
-      delete n;
+      node* current = root_;
+      while (current)
+      {
+        if (key == current->data.first) return current;
+        if (key < current->data.first) current = current->left;
+        else current = current->right;
+      }
+      return nullptr;
     }
+
+    void deleteTree(node* node)
+    {
+      if (!node) return;
+      deleteTree(node->left);
+      deleteTree(node->right);
+      delete node;
+    }
+
+  public:
+    map() = default;
+
+    ~map()
+    {
+      deleteTree(root_);
+    }
+
+    Value& operator[](const Key& key)
+    {
+      node* current = root_;
+      node* parent = nullptr;
+      while (current)
+      {
+        if (key == current->data.first)
+          return current->data.second;
+        parent = current;
+        if (key < current->data.first) current = current->left;
+        else current = current->right;
+      }
+
+      node* newNode = new node({key, Value{}});
+      newNode->parent = parent;
+
+      if (!parent)
+        root_ = newNode;
+      else if (key < parent->data.first)
+        parent->left = newNode;
+      else
+        parent->right = newNode;
+
+      insertFix(newNode);
+      return newNode->data.second;
+    }
+
+    bool empty() const
+    {
+      return root_ == nullptr;
+    }
+
+    class iterator
+    {
+      node* current;
+
+      void goLeftmost()
+      {
+        while (current && current->left) current = current->left;
+      }
+
+    public:
+      iterator(node* node) : current(node)
+      {
+        goLeftmost();
+      }
+
+      std::pair< Key, Value >& operator*() const
+      {
+        return current->data;
+      }
+
+      std::pair< Key, Value >* operator->() const
+      {
+        return &(current->data);
+      }
+
+      iterator& operator++()
+      {
+        if (!current) return *this;
+
+        if (current->right)
+        {
+          current = current->right;
+          while (current->left) current = current->left;
+        }
+        else
+        {
+          node* p = current->parent;
+          while (p && current == p->right)
+          {
+            current = p;
+            p = p->parent;
+          }
+          current = p;
+        }
+
+        return *this;
+      }
+
+      bool operator!=(const iterator& other) const
+      {
+        return current != other.current;
+      }
+    };
+
+    iterator begin() const
+    {
+      return iterator(root_);
+    }
+
+    iterator end() const
+    {
+      return iterator(nullptr);
+    }
+
+    iterator find(const Key& key) const
+    {
+      return iterator(findNode(key));
+    }
+  private:
+    node* root_ = nullptr;
   };
 }
+
 #endif
