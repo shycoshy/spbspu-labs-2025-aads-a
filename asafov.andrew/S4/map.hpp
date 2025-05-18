@@ -24,9 +24,10 @@ namespace asafov
 
       explicit node(const std::pair< Key, Value >& val):
         data(val)
-      {}
+      {
+      }
     };
-    
+
     void leftRotate(node* x)
     {
       node* y = x->right;
@@ -233,6 +234,7 @@ namespace asafov
     {
       return iterator(findNode(key));
     }
+
   private:
     node* root_ = nullptr;
   };
