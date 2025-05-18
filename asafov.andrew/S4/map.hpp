@@ -218,6 +218,10 @@ namespace asafov
       {
         return current != other.current;
       }
+
+      bool operator==(const iterator& other) const {
+        return current == other.current;
+      }
     };
 
     iterator begin() const
