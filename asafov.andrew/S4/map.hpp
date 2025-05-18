@@ -26,6 +26,96 @@ namespace asafov
         data(val)
       {}
     };
+
+        void rotateLeft(node* x)
+    {
+      node* y = x->right;
+      x->right = y->left;
+      if (y->left) y->left->parent = x;
+      y->parent = x->parent;
+      if (!x->parent) root_ = y;
+      else if (x == x->parent->left) x->parent->left = y;
+      else x->parent->right = y;
+      y->left = x;
+      x->parent = y;
+    }
+
+    void rotateRight(node* y)
+    {
+      node* x = y->left;
+      y->left = x->right;
+      if (x->right) x->right->parent = y;
+      x->parent = y->parent;
+      if (!y->parent) root_ = x;
+      else if (y == y->parent->right) y->parent->right = x;
+      else y->parent->left = x;
+      x->right = y;
+      y->parent = x;
+    }
+
+    void balancing(node* z)
+    {
+      while (z->parent && z->parent->color == RED)
+      {
+        if (z->parent == z->parent->parent->left)
+        {
+          node* y = z->parent->parent->right;
+          if (y && y->color == RED)
+          {
+            z->parent->color = BLACK;
+            y->color = BLACK;
+            z->parent->parent->color = RED;
+            z = z->parent->parent;
+          }
+          else
+          {
+            if (z == z->parent->right)
+            {
+              z = z->parent;
+              leftRotate(z);
+            }
+            z->parent->color = BLACK;
+            z->parent->parent->color = RED;
+            rightRotate(z->parent->parent);
+          }
+        }
+        else
+        {
+          node* y = z->parent->parent->left;
+          if (y && y->color == RED)
+          {
+            z->parent->color = BLACK;
+            y->color = BLACK;
+            z->parent->parent->color = RED;
+            z = z->parent->parent;
+          }
+          else
+          {
+            if (z == z->parent->left)
+            {
+              z = z->parent;
+              rightRotate(z);
+            }
+            z->parent->color = BLACK;
+            z->parent->parent->color = RED;
+            leftRotate(z->parent->parent);
+          }
+        }
+      }
+      root_->color = BLACK;
+    }
+
+    node* findNode(const Key& key) const
+    {
+      node* current = root_;
+      while (current)
+      {
+        if (key == current->data.first) return current;
+        if (key < current->data.first) current = current->left;
+        else current = current->right;
+      }
+      return nullptr;
+    }
   public:
     map() = default;
     map(const map& other):
@@ -265,96 +355,6 @@ namespace asafov
     }
 
   private:
-    void rotateLeft(node* x)
-    {
-      node* y = x->right;
-      x->right = y->left;
-      if (y->left) y->left->parent = x;
-      y->parent = x->parent;
-      if (!x->parent) root_ = y;
-      else if (x == x->parent->left) x->parent->left = y;
-      else x->parent->right = y;
-      y->left = x;
-      x->parent = y;
-    }
-
-    void rotateRight(node* y)
-    {
-      node* x = y->left;
-      y->left = x->right;
-      if (x->right) x->right->parent = y;
-      x->parent = y->parent;
-      if (!y->parent) root_ = x;
-      else if (y == y->parent->right) y->parent->right = x;
-      else y->parent->left = x;
-      x->right = y;
-      y->parent = x;
-    }
-
-    void balancing(node* z)
-    {
-      while (z->parent && z->parent->color == RED)
-      {
-        if (z->parent == z->parent->parent->left)
-        {
-          node* y = z->parent->parent->right;
-          if (y && y->color == RED)
-          {
-            z->parent->color = BLACK;
-            y->color = BLACK;
-            z->parent->parent->color = RED;
-            z = z->parent->parent;
-          }
-          else
-          {
-            if (z == z->parent->right)
-            {
-              z = z->parent;
-              leftRotate(z);
-            }
-            z->parent->color = BLACK;
-            z->parent->parent->color = RED;
-            rightRotate(z->parent->parent);
-          }
-        }
-        else
-        {
-          node* y = z->parent->parent->left;
-          if (y && y->color == RED)
-          {
-            z->parent->color = BLACK;
-            y->color = BLACK;
-            z->parent->parent->color = RED;
-            z = z->parent->parent;
-          }
-          else
-          {
-            if (z == z->parent->left)
-            {
-              z = z->parent;
-              rightRotate(z);
-            }
-            z->parent->color = BLACK;
-            z->parent->parent->color = RED;
-            leftRotate(z->parent->parent);
-          }
-        }
-      }
-      root_->color = BLACK;
-    }
-
-    node* findNode(const Key& key) const
-    {
-      node* current = root_;
-      while (current)
-      {
-        if (key == current->data.first) return current;
-        if (key < current->data.first) current = current->left;
-        else current = current->right;
-      }
-      return nullptr;
-    }
-
     node* root_ = nullptr;
     size_t size_ = 0;
   };
