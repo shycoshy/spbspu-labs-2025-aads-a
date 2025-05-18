@@ -50,12 +50,10 @@ namespace asafov
     {
       if (this != &other)
       {
-        map temp;
         for (auto it = other.begin(); it != other.end(); ++it)
         {
-          temp.insert(temp.end(), *it);
+          (*this)[it->first] = it->second;
         }
-        std::swap(temp);
       }
       return *this;
     }
