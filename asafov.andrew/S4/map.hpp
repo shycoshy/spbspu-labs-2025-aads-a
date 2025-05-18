@@ -123,11 +123,51 @@ namespace asafov
       if (!node) return;
       deleteTree(node->left);
       deleteTree(node->right);
+      node->left = node->right = nullptr;
+      node->parent = nullptr;
       delete node;
     }
 
   public:
     map() = default;
+
+    map(const map& other) : root_(nullptr)
+    {
+      for (auto it = other.begin(); it != other.end(); ++it)
+      {
+        (*this)[it->first] = it->second;
+      }
+    }
+
+    map& operator=(const map& other)
+    {
+      if (this != &other)
+      {
+        deleteTree(root_);
+        root_ = nullptr;
+        for (auto it = other.begin(); it != other.end(); ++it)
+        {
+          (*this)[it->first] = it->second;
+        }
+      }
+      return *this;
+    }
+
+    map(map&& other) noexcept : root_(other.root_)
+    {
+      other.root_ = nullptr;
+    }
+
+    map& operator=(map&& other) noexcept
+    {
+      if (this != &other)
+      {
+        deleteTree(root_);
+        root_ = other.root_;
+        other.root_ = nullptr;
+      }
+      return *this;
+    }
 
     ~map()
     {
@@ -219,7 +259,8 @@ namespace asafov
         return current != other.current;
       }
 
-      bool operator==(const iterator& other) const {
+      bool operator==(const iterator& other) const
+      {
         return current == other.current;
       }
     };
