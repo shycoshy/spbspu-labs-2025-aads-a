@@ -51,7 +51,6 @@ namespace asafov
       y->left = x;
       x->parent = y;
     }
-
     void rotateRight(node* y)
     {
       node* x = y->left;
@@ -76,7 +75,6 @@ namespace asafov
       x->right = y;
       y->parent = x;
     }
-
     void balance(node* z)
     {
       while (z->parent && z->parent->color == RED)
@@ -191,6 +189,44 @@ namespace asafov
       clear(root_);
     }
 
+    bool insert(const Key& k, const Value& v)
+    {
+      node* current = root_;
+      node* parent = nullptr;
+      while (current)
+      {
+        if (k == current->data.first)
+        {
+          return false;
+        }
+        parent = current;
+        if (k < current->data.first)
+        {
+          current = current->left;
+        }
+        else
+        {
+          current = current->right;
+        }
+      }
+      node* temp = new node({k, v});
+      temp->parent = parent;
+      if (!parent)
+      {
+        root_ = temp;
+      }
+      else if (k < parent->data.first)
+      {
+        parent->left = temp;
+      }
+      else
+      {
+        parent->right = temp;
+      }
+      balancing(temp);
+      ++size_;
+      return true;
+    }
     Value& operator[](const Key& key)
     {
       node* current = root_;
