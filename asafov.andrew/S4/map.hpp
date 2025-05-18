@@ -237,7 +237,7 @@ namespace asafov
     {
       std::swap(root_, other.root_);
     }
-    
+
     class iterator
     {
       node* current;
