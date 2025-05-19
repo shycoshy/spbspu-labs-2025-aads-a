@@ -1,7 +1,7 @@
 #ifndef COMMAND_H
 #define COMMAND_H
 #include <string>
-#include "map.hpp"
+#include <map.hpp>
 namespace asafov
 {
   using map_t = asafov::map<int, std::string>;
