@@ -50,6 +50,36 @@ namespace asafov
       delete[] data_;
     }
 
+    deque& operator=(const deque& other)
+    {
+      if (this != &other)
+      {
+        deque temp(other);
+        swap(temp);
+      }
+      return *this;
+    }
+
+    deque& operator=(deque&& other) noexcept
+    {
+      if (this != &other)
+      {
+        delete[] data_;
+        data_ = other.data_;
+        capacity_ = other.capacity_;
+        size_ = other.size_;
+        front_index_ = other.front_index_;
+        back_index_ = other.back_index_;
+
+        other.data_ = nullptr;
+        other.capacity_ = 0;
+        other.size_ = 0;
+        other.front_index_ = 0;
+        other.back_index_ = 0;
+      }
+      return *this;
+    }
+
     void push_back(const T& value)
     {
       if (size_ == capacity_)
