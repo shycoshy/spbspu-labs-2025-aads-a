@@ -1,7 +1,7 @@
 #include "countFunctions.h"
 #include <stdexcept>
 
-int asafov::evaluateExpressionFromString(std::istream& is, std::stack<num_t>& result)
+int asafov::evaluateExpressionFromString(std::istream& is, asafov::stack<num_t>& result)
 {
   std::string str;
   std::getline(is, str);
