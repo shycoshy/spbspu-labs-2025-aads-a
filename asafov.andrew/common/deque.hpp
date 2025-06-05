@@ -18,6 +18,33 @@ namespace asafov
       back_index_(0)
     {}
 
+    deque(const deque& other):
+      data_(new T[other.capacity_]),
+      capacity_(other.capacity_),
+      size_(other.size_),
+      front_index_(0),
+      back_index_(other.size_)
+    {
+      for (size_t i = 0; i < other.size_; ++i)
+      {
+        data_[i] = other.data_[(other.front_index_ + i) % other.capacity_];
+      }
+    }
+
+    deque(deque&& other) noexcept:
+      data_(other.data_),
+      capacity_(other.capacity_),
+      size_(other.size_),
+      front_index_(other.front_index_),
+      back_index_(other.back_index_)
+    {
+      other.data_ = nullptr;
+      other.capacity_ = 0;
+      other.size_ = 0;
+      other.front_index_ = 0;
+      other.back_index_ = 0;
+    }
+
     ~deque()
     {
       delete[] data_;
