@@ -4,8 +4,7 @@
 
 namespace asafov
 {
-
-  template<typename T>
+  template<class T>
   class queue : public deque<T>
   {
   public:

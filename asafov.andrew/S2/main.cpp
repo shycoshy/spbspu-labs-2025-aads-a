@@ -5,7 +5,7 @@
 
 int main(int argc, char* argv[])
 {
-  std::stack<asafov::num_t> result;
+  asafov::stack<asafov::num_t> result;
   std::istream* is = nullptr;
   std::ifstream fin;
   if (argc == 1)

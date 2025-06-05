@@ -6,7 +6,7 @@
 
 namespace asafov
 {
-  template<typename T>
+  template<class T>
   class deque
   {
   public:
