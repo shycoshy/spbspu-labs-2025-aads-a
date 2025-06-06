@@ -1,6 +1,7 @@
 #include "countFunctions.h"
 #include <stdexcept>
 #include <cmath>
+#include <limits>
 
 namespace
 {
@@ -29,7 +30,7 @@ asafov::num_t asafov::evaluatePostfixExpression(queue_str_t& queue)
 
       if (token == "+")
       {
-        if (a > 9223372036854775807ll - b)
+        if (a > numeric_limits< long long >::max() - b)
         {
           while (!stack.empty()) stack.pop();
           throw std::logic_error("overflow!");
@@ -38,7 +39,7 @@ asafov::num_t asafov::evaluatePostfixExpression(queue_str_t& queue)
       }
       else if (token == "-")
       {
-        if (a + 1 < -9223372036854775807ll + b)
+        if (a + 1 < -numeric_limits< long long >::max() + b)
         {
           while (!stack.empty()) stack.pop();
           throw std::logic_error("underflow!");
@@ -47,22 +48,22 @@ asafov::num_t asafov::evaluatePostfixExpression(queue_str_t& queue)
       }
       else if (token == "*")
       {
-        if (a > 0 && b > 0 && a > 9223372036854775807ll / b)
+        if (a > 0 && b > 0 && a > numeric_limits< long long >::max() / b)
         {
           while (!stack.empty()) stack.pop();
           throw std::logic_error("overflow!");
         }
-        else if (a > 0 && b < 0 && b < -9223372036854775807ll / a)
+        else if (a > 0 && b < 0 && b < -numeric_limits< long long >::max() / a)
         {
           while (!stack.empty()) stack.pop();
           throw std::logic_error("underflow!");
         }
-        else if (a < 0 && b > 0 && a < -9223372036854775807ll / b)
+        else if (a < 0 && b > 0 && a < -numeric_limits< long long >::max() / b)
         {
           while (!stack.empty()) stack.pop();
           throw std::logic_error("underflow!");
         }
-        else if (a < 0 && b < 0 && a < 9223372036854775807ll / b)
+        else if (a < 0 && b < 0 && a < numeric_limits< long long >::max() / b)
         {
           while (!stack.empty()) stack.pop();
           throw std::logic_error("overflow!");

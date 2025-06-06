@@ -17,5 +17,6 @@ namespace asafov
   void convertInfixToPostfix(queue_str_t& queue);
   num_t evaluatePostfixExpression(queue_str_t& queue);
   int evaluateExpressionFromString(std::istream& is, asafov::stack_num_t& result);
+  void count(asafov::stack_num_t& result, std::istream& is);
 }
 #endif
