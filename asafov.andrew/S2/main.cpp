@@ -8,7 +8,7 @@ int main(int argc, char* argv[])
   asafov::stack_num_t result;
   if (argc == 1)
   {
-    asafov::count(result, fin);
+    asafov::count(result, std::cin);
   }
   else if (argc == 2)
   {
