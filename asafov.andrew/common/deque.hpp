@@ -1,5 +1,5 @@
-#ifndef Deque_HPP
-#define Deque_HPP
+#ifndef DEQUE_HPP
+#define DEQUE_HPP
 
 #include <iostream>
 #include <stdexcept>

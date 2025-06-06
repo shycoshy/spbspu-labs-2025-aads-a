@@ -10,22 +10,22 @@ namespace asafov
   public:
     void push(const T& value)
     {
-        this->push_back(value);
+      this->push_back(value);
     }
 
     void pop()
     {
-        this->pop_front();
+      this->pop_front();
     }
 
     T& front()
     {
-        return deque<T>::front();
+      return Deque<T>::front();
     }
 
     const T& front() const
     {
-        return deque<T>::front();
+      return Deque<T>::front();
     }
   };
 }
