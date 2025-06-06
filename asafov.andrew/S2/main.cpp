@@ -6,16 +6,16 @@
 int main(int argc, char* argv[])
 {
   asafov::stack_num_t result;
-  std::istream* is = nullptr;
+  std::istream& is = nullptr;
   std::ifstream fin;
   if (argc == 1)
   {
-    is = &std::cin;
+    is = std::cin;
   }
   else if (argc == 2)
   {
     fin.open(argv[1]);
-    is = &fin;
+    is = fin;
   }
   else
   {
