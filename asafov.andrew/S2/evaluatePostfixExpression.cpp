@@ -10,9 +10,9 @@ namespace
   }
 }
 
-asafov::num_t asafov::evaluatePostfixExpression(queue_t& queue)
+asafov::num_t asafov::evaluatePostfixExpression(queue_str_t& queue)
 {
-  asafov::stack<std::string> stack;
+  stack_str_t stack;
   while (!queue.empty())
   {
     std::string token = queue.front();

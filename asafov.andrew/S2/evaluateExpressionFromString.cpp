@@ -1,12 +1,12 @@
 #include "countFunctions.h"
 #include <stdexcept>
 
-int asafov::evaluateExpressionFromString(std::istream& is, asafov::stack<num_t>& result)
+int asafov::evaluateExpressionFromString(std::istream& is, asafov::stack_num_t& result)
 {
   std::string str;
   std::getline(is, str);
   if (str.empty()) return 0;
-  asafov::queue_t queue;
+  asafov::queue_str_t queue;
   asafov::parseStringToQueue(queue, str);
   try
   {

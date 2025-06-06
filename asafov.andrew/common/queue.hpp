@@ -5,7 +5,7 @@
 namespace asafov
 {
   template<class T>
-  class queue : public deque<T>
+  class Queue : public Deque<T>
   {
   public:
     void push(const T& value)

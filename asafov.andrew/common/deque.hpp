@@ -1,5 +1,5 @@
-#ifndef DEQUE_HPP
-#define DEQUE_HPP
+#ifndef Deque_HPP
+#define Deque_HPP
 
 #include <iostream>
 #include <stdexcept>
@@ -7,10 +7,10 @@
 namespace asafov
 {
   template<class T>
-  class deque
+  class Deque
   {
   public:
-    deque():
+    Deque():
       data_(nullptr),
       capacity_(0),
       size_(0),
@@ -18,7 +18,7 @@ namespace asafov
       back_index_(0)
     {}
 
-    deque(const deque& other):
+    Deque(const Deque& other):
       data_(new T[other.capacity_]),
       capacity_(other.capacity_),
       size_(other.size_),
@@ -31,7 +31,7 @@ namespace asafov
       }
     }
 
-    deque(deque&& other) noexcept:
+    Deque(Deque&& other) noexcept:
       data_(other.data_),
       capacity_(other.capacity_),
       size_(other.size_),
@@ -45,22 +45,22 @@ namespace asafov
       other.back_index_ = 0;
     }
 
-    ~deque()
+    ~Deque()
     {
       delete[] data_;
     }
 
-    deque& operator=(const deque& other)
+    Deque& operator=(const Deque& other)
     {
       if (this != &other)
       {
-        deque temp(other);
+        Deque temp(other);
         swap(temp);
       }
       return *this;
     }
 
-    deque& operator=(deque&& other) noexcept
+    Deque& operator=(Deque&& other) noexcept
     {
       if (this != &other)
       {
@@ -106,7 +106,7 @@ namespace asafov
     {
       if (empty())
       {
-        throw std::out_of_range("deque::pop_back(): empty deque");
+        throw std::out_of_range("Deque::pop_back(): empty Deque");
       }
       back_index_ = (back_index_ - 1 + capacity_) % capacity_;
       --size_;
@@ -116,7 +116,7 @@ namespace asafov
     {
       if (empty())
       {
-        throw std::out_of_range("deque::pop_front(): empty deque");
+        throw std::out_of_range("Deque::pop_front(): empty Deque");
       }
       front_index_ = (front_index_ + 1) % capacity_;
       --size_;
@@ -126,7 +126,7 @@ namespace asafov
     {
       if (empty())
       {
-        throw std::out_of_range("deque::front(): empty deque");
+        throw std::out_of_range("Deque::front(): empty Deque");
       }
       return data_[front_index_];
     }
@@ -135,7 +135,7 @@ namespace asafov
     {
       if (empty())
       {
-        throw std::out_of_range("deque::back(): empty deque");
+        throw std::out_of_range("Deque::back(): empty Deque");
       }
       return data_[(back_index_ - 1 + capacity_) % capacity_];
     }

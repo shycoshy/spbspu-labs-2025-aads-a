@@ -1,7 +1,7 @@
 #include "countFunctions.h"
 #include <stdexcept>
 
-void asafov::parseStringToQueue(queue_t& queue, const std::string& str)
+void asafov::parseStringToQueue(queue_str_t& queue, const std::string& str)
 {
   size_t i = 0;
   while (i < str.size())
