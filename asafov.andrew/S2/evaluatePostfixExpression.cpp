@@ -30,7 +30,7 @@ asafov::num_t asafov::evaluatePostfixExpression(queue_str_t& queue)
 
       if (token == "+")
       {
-        if (a > numeric_limits< long long >::max() - b)
+        if (a > std::numeric_limits< long long >::max() - b)
         {
           while (!stack.empty()) stack.pop();
           throw std::logic_error("overflow!");
@@ -39,7 +39,7 @@ asafov::num_t asafov::evaluatePostfixExpression(queue_str_t& queue)
       }
       else if (token == "-")
       {
-        if (a + 1 < -numeric_limits< long long >::max() + b)
+        if (a + 1 < -1 * std::numeric_limits< long long >::max() + b)
         {
           while (!stack.empty()) stack.pop();
           throw std::logic_error("underflow!");
@@ -48,22 +48,22 @@ asafov::num_t asafov::evaluatePostfixExpression(queue_str_t& queue)
       }
       else if (token == "*")
       {
-        if (a > 0 && b > 0 && a > numeric_limits< long long >::max() / b)
+        if (a > 0 && b > 0 && a > std::numeric_limits< long long >::max() / b)
         {
           while (!stack.empty()) stack.pop();
           throw std::logic_error("overflow!");
         }
-        else if (a > 0 && b < 0 && b < -numeric_limits< long long >::max() / a)
+        else if (a > 0 && b < 0 && b < -1 * std::numeric_limits< long long >::max() / a)
         {
           while (!stack.empty()) stack.pop();
           throw std::logic_error("underflow!");
         }
-        else if (a < 0 && b > 0 && a < -numeric_limits< long long >::max() / b)
+        else if (a < 0 && b > 0 && a < -1 * std::numeric_limits< long long >::max() / b)
         {
           while (!stack.empty()) stack.pop();
           throw std::logic_error("underflow!");
         }
-        else if (a < 0 && b < 0 && a < numeric_limits< long long >::max() / b)
+        else if (a < 0 && b < 0 && a < std::numeric_limits< long long >::max() / b)
         {
           while (!stack.empty()) stack.pop();
           throw std::logic_error("overflow!");
