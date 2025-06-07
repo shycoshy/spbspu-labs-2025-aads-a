@@ -6,7 +6,7 @@ int main(int argc, char* argv[])
 {
   if (argc != 3)
   {
-    std::cerr << "Usage: ./lab [ascending|descending|breadth] filename\n";
+    std::cerr << "too many arguments!";
     return 1;
   }
 

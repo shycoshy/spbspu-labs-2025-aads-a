@@ -1,7 +1,7 @@
 #ifndef NLR_ITERATOR_HPP
 #define NLR_ITERATOR_HPP
 #include <map.hpp>
-#include <stack>
+#include <stack.hpp>
 #include <utility>
 
 namespace asafov
@@ -44,7 +44,7 @@ namespace asafov
     }
 
   private:
-    std::stack< map< Key, Value >::node* > stack_;
+    asafov::Stack< map< Key, Value >::node* > stack_;
 
     explicit nlr_iterator(map< Key, Value >::node* root)
     {

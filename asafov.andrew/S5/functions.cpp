@@ -71,7 +71,7 @@ int traverseTree(const std::string& mode, const asafov::map< int, std::string >&
   }
   else if (mode == "breadth")
   {
-    std::queue< decltype(tree.begin().operator->()) > q;
+    asafov::Queue< decltype(tree.begin().operator->()) > q;
     auto* root = tree.begin().operator->();
     q.push(root);
 
