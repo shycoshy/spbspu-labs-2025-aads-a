@@ -16,10 +16,10 @@ namespace
   }
 }
 
-void asafov::convertInfixToPostfix(queue_t& queue)
+void asafov::convertInfixToPostfix(queue_str_t& queue)
 {
-  queue_t output;
-  stack_t ops;
+  queue_str_t output;
+  stack_str_t ops;
 
   while (!queue.empty())
   {
