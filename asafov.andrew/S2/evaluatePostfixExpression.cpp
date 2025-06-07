@@ -1,6 +1,7 @@
 #include "countFunctions.h"
 #include <stdexcept>
 #include <cmath>
+#include <limits>
 
 namespace
 {
@@ -10,9 +11,9 @@ namespace
   }
 }
 
-asafov::num_t asafov::evaluatePostfixExpression(queue_t& queue)
+asafov::num_t asafov::evaluatePostfixExpression(queue_str_t& queue)
 {
-  std::stack<std::string> stack;
+  stack_str_t stack;
   while (!queue.empty())
   {
     std::string token = queue.front();
@@ -29,7 +30,7 @@ asafov::num_t asafov::evaluatePostfixExpression(queue_t& queue)
 
       if (token == "+")
       {
-        if (a > 9223372036854775807ll - b)
+        if (a > std::numeric_limits< long long >::max() - b)
         {
           while (!stack.empty()) stack.pop();
           throw std::logic_error("overflow!");
@@ -38,7 +39,7 @@ asafov::num_t asafov::evaluatePostfixExpression(queue_t& queue)
       }
       else if (token == "-")
       {
-        if (a + 1 < -9223372036854775807ll + b)
+        if (a + 1 < -1 * std::numeric_limits< long long >::max() + b)
         {
           while (!stack.empty()) stack.pop();
           throw std::logic_error("underflow!");
@@ -47,22 +48,22 @@ asafov::num_t asafov::evaluatePostfixExpression(queue_t& queue)
       }
       else if (token == "*")
       {
-        if (a > 0 && b > 0 && a > 9223372036854775807ll / b)
+        if (a > 0 && b > 0 && a > std::numeric_limits< long long >::max() / b)
         {
           while (!stack.empty()) stack.pop();
           throw std::logic_error("overflow!");
         }
-        else if (a > 0 && b < 0 && b < -9223372036854775807ll / a)
+        else if (a > 0 && b < 0 && b < -1 * std::numeric_limits< long long >::max() / a)
         {
           while (!stack.empty()) stack.pop();
           throw std::logic_error("underflow!");
         }
-        else if (a < 0 && b > 0 && a < -9223372036854775807ll / b)
+        else if (a < 0 && b > 0 && a < -1 * std::numeric_limits< long long >::max() / b)
         {
           while (!stack.empty()) stack.pop();
           throw std::logic_error("underflow!");
         }
-        else if (a < 0 && b < 0 && a < 9223372036854775807ll / b)
+        else if (a < 0 && b < 0 && a < std::numeric_limits< long long >::max() / b)
         {
           while (!stack.empty()) stack.pop();
           throw std::logic_error("overflow!");

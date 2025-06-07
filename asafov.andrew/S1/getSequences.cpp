@@ -24,5 +24,6 @@ void asafov::getSequences(sequence_list_t& sequences, std::istream& in = std::ci
     }
     sequence_t pair = std::make_pair(name, list);
     sequences.push_back(pair);
-  } while (!in.eof());
+  }
+  while (!in.eof());
 }
