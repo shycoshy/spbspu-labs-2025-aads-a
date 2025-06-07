@@ -116,7 +116,7 @@ namespace asafov
       list.tail_ = nullptr;
       list.size_ = 0;
     }
-    ForwardList(const size_t count, const T value):
+    ForwardList(size_t count, const T& value):
       ForwardList()
     {
       for (size_t i = 0; i < count; ++i)
@@ -333,7 +333,6 @@ namespace asafov
       {
         temp.push_back(value);
       }
-      clear();
       swap(temp);
     }
 
