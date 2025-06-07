@@ -8,20 +8,7 @@ int asafov::evaluateExpressionFromString(std::istream& is, asafov::stack_num_t& 
   if (str.empty()) return 0;
   asafov::queue_str_t queue;
   asafov::parseStringToQueue(queue, str);
-  try
-  {
-    asafov::convertInfixToPostfix(queue);
-    result.push(asafov::evaluatePostfixExpression(queue));
-  }
-  catch (const std::invalid_argument& e)
-  {
-    std::cerr << e.what() << '\n';
-    return 1;
-  }
-  catch (const std::logic_error& e)
-  {
-    std::cerr << e.what() << '\n';
-    return 2;
-  }
+  asafov::convertInfixToPostfix(queue);
+  result.push(asafov::evaluatePostfixExpression(queue));
   return 0;
 }

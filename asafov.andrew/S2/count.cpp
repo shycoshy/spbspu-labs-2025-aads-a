@@ -1,5 +1,6 @@
 #include "countFunctions.h"
 #include <stdexcept>
+#include <iomanip>
 
 void asafov::count(asafov::stack_num_t& result, std::istream& is)
 {

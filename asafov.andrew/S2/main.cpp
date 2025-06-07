@@ -1,5 +1,4 @@
 #include <iostream>
-#include <iomanip>
 #include <fstream>
 #include <stdexcept>
 #include "countFunctions.h"
@@ -25,7 +24,7 @@ int main(int argc, char* argv[])
     fin.open(argv[1]);
     try
     {
-      asafov::count(result, static_cast< std::istream >(fin));
+      asafov::count(result, fin);
     }
     catch (const std::exception& e)
     {
