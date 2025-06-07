@@ -4,8 +4,8 @@
 #include <map.hpp>
 namespace asafov
 {
-  using map_t = asafov::map<int, std::string>;
-  using maps_t = asafov::map<std::string, map_t>;
+  using map_t = asafov::Map<int, std::string>;
+  using maps_t = asafov::Map<std::string, map_t>;
 
   void printMap(const maps_t& maps, const std::string& name);
   bool complement(maps_t& maps, const std::string& newName, const std::string& left, const std::string& right);

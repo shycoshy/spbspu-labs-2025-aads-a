@@ -101,12 +101,20 @@ BOOST_AUTO_TEST_CASE(assignment_operator_lvalue_test)
   list.push_back(1);
   list.push_back(2);
   list.push_back(3);
-  asafov::ForwardList< size_t > assigned = list;
+  asafov::ForwardList< size_t > assigned;
+  assigned = list;
+  for (auto& a: list)
+  {
+    ++a;
+  }
+  list.push_back(4);
+
+  BOOST_TEST(list.size() == 4);
   BOOST_TEST(assigned.size() == 3);
   BOOST_CHECK_EQUAL(assigned.front(), 1);
   BOOST_CHECK_EQUAL(assigned.back(), 3);
-  list.push_back(4);
-  BOOST_TEST(assigned.size() == 3);
+  BOOST_CHECK_EQUAL(list.front(), 2);
+  BOOST_CHECK_EQUAL(list.back(), 4);
 }
 
 BOOST_AUTO_TEST_CASE(assignment_operator_rvalue_test)
