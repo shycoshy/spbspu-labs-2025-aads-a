@@ -35,64 +35,6 @@ namespace asafov
       Comparator cmp_;
     };
 
-    template< class value_t>
-    class BasicIterator
-    {
-      friend class ForwardList;
-    public:
-      using iterator_category = std::forward_iterator_tag;
-
-      BasicIterator() noexcept:
-        current_(nullptr),
-        last_(nullptr)
-      {}
-
-      value_t& operator*() const noexcept
-      {
-        return current_->data_;
-      }
-      value_t* operator->() const noexcept
-      {
-        return std::addressof(current_->data_);
-      }
-
-      BasicIterator& operator++() noexcept
-      {
-        if (current_ && current_ != last_)
-        {
-          current_ = current_->next_;
-        }
-        else
-        {
-          current_ = nullptr;
-        }
-        return *this;
-      }
-      BasicIterator& operator++(int) noexcept
-      {
-        BasicIterator temp(*this);
-        ++(*this);
-        return temp;
-      }
-
-      bool operator==(const BasicIterator& rhs) const noexcept
-      {
-        return current_ == rhs.current_ && last_ == rhs.last_;
-      }
-      bool operator!=(const BasicIterator& rhs) const noexcept
-      {
-       return !(*this == rhs);
-      }
-    private:
-      BasicIterator(Node* node, Node* last) noexcept:
-        current_(node),
-        last_(last)
-      {}
-
-      Node* current_;
-      Node* last_;
-    };
-
   public:
     ForwardList() noexcept:
       head_(nullptr),
@@ -148,8 +90,121 @@ namespace asafov
       return *this;
     }
 
-    using Iterator = BasicIterator< T >;
-    using ConstIterator = BasicIterator< const T >;
+    class ConstIterator
+    {
+      friend class ForwardList;
+    public:
+      using iterator_category = std::forward_iterator_tag;
+      using value_t = const T;
+
+      ConstIterator() noexcept:
+        current_(nullptr),
+        last_(nullptr)
+      {}
+
+      value_t& operator*() const noexcept
+      {
+        return current_->data_;
+      }
+      value_t* operator->() const noexcept
+      {
+        return std::addressof(current_->data_);
+      }
+
+      ConstIterator& operator++() noexcept
+      {
+        if (current_ && current_ != last_)
+        {
+          current_ = current_->next_;
+        }
+        else
+        {
+          current_ = nullptr;
+        }
+        return *this;
+      }
+      ConstIterator& operator++(int) noexcept
+      {
+        ConstIterator temp(*this);
+        ++(*this);
+        return temp;
+      }
+
+      bool operator==(const ConstIterator& rhs) const noexcept
+      {
+        return current_ == rhs.current_ && last_ == rhs.last_;
+      }
+      bool operator!=(const ConstIterator& rhs) const noexcept
+      {
+       return !(*this == rhs);
+      }
+    private:
+      ConstIterator(Node* node, Node* last) noexcept:
+        current_(node),
+        last_(last)
+      {}
+
+      Node* current_;
+      Node* last_;
+    };
+
+    class Iterator
+    {
+      friend class ForwardList;
+    public:
+      using iterator_category = std::forward_iterator_tag;
+      using value_t = T;
+
+      Iterator() noexcept:
+        current_(nullptr),
+        last_(nullptr)
+      {}
+
+      value_t& operator*() const noexcept
+      {
+        return current_->data_;
+      }
+      value_t* operator->() const noexcept
+      {
+        return std::addressof(current_->data_);
+      }
+
+      Iterator& operator++() noexcept
+      {
+        if (current_ && current_ != last_)
+        {
+          current_ = current_->next_;
+        }
+        else
+        {
+          current_ = nullptr;
+        }
+        return *this;
+      }
+      Iterator& operator++(int) noexcept
+      {
+        Iterator temp(*this);
+        ++(*this);
+        return temp;
+      }
+
+      bool operator==(const Iterator& rhs) const noexcept
+      {
+        return current_ == rhs.current_ && last_ == rhs.last_;
+      }
+      bool operator!=(const Iterator& rhs) const noexcept
+      {
+       return !(*this == rhs);
+      }
+    private:
+      Iterator(Node* node, Node* last) noexcept:
+        current_(node),
+        last_(last)
+      {}
+
+      Node* current_;
+      Node* last_;
+    };
 
     Iterator begin() noexcept
     {
