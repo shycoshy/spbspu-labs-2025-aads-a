@@ -6,7 +6,7 @@
 namespace asafov
 {
   template< typename Key, typename Value >
-  class map
+  class Map
   {
     enum Color: char
     {
@@ -149,15 +149,15 @@ namespace asafov
     }
 
   public:
-    map() = default;
-    map(const map& other) : root_(nullptr)
+    Map() = default;
+    Map(const Map& other) : root_(nullptr)
     {
       for (auto it = other.begin(); it != other.end(); ++it)
       {
         (*this)[it->first] = it->second;
       }
     }
-    map& operator=(const map& other)
+    Map& operator=(const Map& other)
     {
       if (this != &other)
       {
@@ -170,11 +170,11 @@ namespace asafov
       }
       return *this;
     }
-    map(map&& other) noexcept : root_(other.root_)
+    Map(Map&& other) noexcept : root_(other.root_)
     {
       other.root_ = nullptr;
     }
-    map& operator=(map&& other) noexcept
+    Map& operator=(Map&& other) noexcept
     {
       if (this != &other)
       {
@@ -184,7 +184,7 @@ namespace asafov
       }
       return *this;
     }
-    ~map()
+    ~Map()
     {
       clear(root_);
     }
@@ -305,7 +305,7 @@ namespace asafov
       return root_ == nullptr;
     }
 
-    void swap(map& other) noexcept
+    void swap(Map& other) noexcept
     {
       std::swap(root_, other.root_);
     }
